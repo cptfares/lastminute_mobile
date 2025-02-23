@@ -11,18 +11,22 @@ export default function ProductScreen() {
   // In a real app, fetch product details based on id
   const product = {
     name: 'Coachella Weekend Pass',
-    price: 110.00,
-    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60',
+    price: 110.0,
+    image:
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60',
   };
 
-  const incrementQuantity = () => setQuantity(q => q + 1);
-  const decrementQuantity = () => setQuantity(q => Math.max(1, q - 1));
+  const incrementQuantity = () => setQuantity((q) => q + 1);
+  const decrementQuantity = () => setQuantity((q) => Math.max(1, q - 1));
   const total = product.price * quantity;
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.favoriteButton}>
@@ -32,7 +36,7 @@ export default function ProductScreen() {
 
       <View style={styles.content}>
         <Image source={{ uri: product.image }} style={styles.productImage} />
-        
+
         <View style={styles.productInfo}>
           <Text style={styles.productName}>{product.name}</Text>
           <Text style={styles.productPrice}>${product.price.toFixed(2)}</Text>
@@ -42,12 +46,22 @@ export default function ProductScreen() {
             <View style={styles.quantityControls}>
               <TouchableOpacity
                 onPress={decrementQuantity}
-                style={[styles.quantityButton, quantity === 1 && styles.quantityButtonDisabled]}
+                style={[
+                  styles.quantityButton,
+                  quantity === 1 && styles.quantityButtonDisabled,
+                ]}
               >
-                <Ionicons name="remove" size={20} color={quantity === 1 ? '#9ca3af' : '#fff'} />
+                <Ionicons
+                  name="remove"
+                  size={20}
+                  color={quantity === 1 ? '#9ca3af' : '#fff'}
+                />
               </TouchableOpacity>
               <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity onPress={incrementQuantity} style={styles.quantityButton}>
+              <TouchableOpacity
+                onPress={incrementQuantity}
+                style={styles.quantityButton}
+              >
                 <Ionicons name="add" size={20} color="#fff" />
               </TouchableOpacity>
             </View>
@@ -56,7 +70,10 @@ export default function ProductScreen() {
       </View>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.addToCartButton}>
+        <TouchableOpacity
+          style={styles.addToCartButton}
+          onPress={() => router.push('/cart')}
+        >
           <Text style={styles.addToCartPrice}>${total.toFixed(2)}</Text>
           <Text style={styles.addToCartText}>Add to Bag</Text>
         </TouchableOpacity>

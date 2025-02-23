@@ -42,11 +42,22 @@ export default function RootLayout() {
       ) : (
         <Stack screenOptions={{ headerShown: false }}>
           <Stack.Screen name="login" />
+          <Stack.Screen name="signup" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="chat" options={{ presentation: 'modal' }} />
-          <Stack.Screen name="edit-profile" options={{ presentation: 'card' }} />
+          <Stack.Screen
+            name="edit-profile"
+            options={{ presentation: 'card' }}
+          />
           <Stack.Screen name="search" />
           <Stack.Screen name="product/[id]" />
+          <Stack.Screen name="cart" />
+          <Stack.Screen name="checkout" />
+          <Stack.Screen
+            name="order-success"
+            options={{ presentation: 'modal' }}
+          />
+          <Stack.Screen name="order/[id]" />
         </Stack>
       )}
       <FloatingChatButton />
