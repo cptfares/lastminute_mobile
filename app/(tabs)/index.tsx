@@ -1,9 +1,24 @@
-import { View, Text, TextInput, TouchableOpacity, ScrollView, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  ScrollView,
+  StyleSheet,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 
-function CategoryCard({ icon, title, onPress }: { icon: string; title: string; onPress: () => void }) {
+function CategoryCard({
+  icon,
+  title,
+  onPress,
+}: {
+  icon: string;
+  title: string;
+  onPress: () => void;
+}) {
   return (
     <TouchableOpacity style={styles.categoryCard} onPress={onPress}>
       <View style={styles.categoryIcon}>
@@ -16,12 +31,12 @@ function CategoryCard({ icon, title, onPress }: { icon: string; title: string; o
 
 export default function HomeScreen() {
   const router = useRouter();
-  
+
   const handleSearch = (text: string) => {
     if (text.trim()) {
       router.push({
         pathname: '/search',
-        params: { query: text.trim() }
+        params: { query: text.trim() },
       });
     }
   };
@@ -29,17 +44,17 @@ export default function HomeScreen() {
   const handleCategoryPress = (category: string) => {
     router.push({
       pathname: '/search',
-      params: { category }
+      params: { category },
     });
   };
 
   return (
     <View style={styles.container}>
       <Header />
-      
+
       <ScrollView style={styles.content}>
         <View style={styles.searchContainer}>
-          <TouchableOpacity 
+          <TouchableOpacity
             style={styles.searchBar}
             onPress={() => router.push('/search')}
           >
@@ -58,20 +73,29 @@ export default function HomeScreen() {
         </View>
 
         <Text style={styles.sectionTitle}>Explore Categories</Text>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.categoriesScroll}>
-          <CategoryCard 
-            icon="ticket" 
-            title="Event Tickets & Passes" 
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={styles.categoriesScroll}
+        >
+          <CategoryCard
+            icon="ticket"
+            title="Event Tickets & Passes"
             onPress={() => handleCategoryPress('events')}
           />
-          <CategoryCard 
-            icon="card" 
-            title="Digital Gift Cards" 
+          <CategoryCard
+            icon="card"
+            title="Digital Gift Cards"
             onPress={() => handleCategoryPress('gift-cards')}
           />
-          <CategoryCard 
-            icon="repeat" 
-            title="Subscriptions & Services" 
+          <CategoryCard
+            icon="card"
+            title="Digital Gift Cards"
+            onPress={() => handleCategoryPress('gift-cards')}
+          />
+          <CategoryCard
+            icon="repeat"
+            title="Subscriptions & Services"
             onPress={() => handleCategoryPress('subscriptions')}
           />
         </ScrollView>
@@ -84,7 +108,27 @@ export default function HomeScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity 
+          <TouchableOpacity
+            style={styles.featuredCard}
+            onPress={() => router.push('/product/1')}
+          >
+            <View style={styles.featuredContent}>
+              <Text style={styles.featuredTitle}>Exclusive Offer! ⚡️</Text>
+              <Text style={styles.featuredDescription}>
+                Get this document for just $10. Limited time only!
+              </Text>
+            </View>
+          </TouchableOpacity>
+        </View>
+        <View style={styles.featuredSection}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Featured Offers</Text>
+            <TouchableOpacity>
+              <Text style={styles.viewAllText}>View all</Text>
+            </TouchableOpacity>
+          </View>
+
+          <TouchableOpacity
             style={styles.featuredCard}
             onPress={() => router.push('/product/1')}
           >

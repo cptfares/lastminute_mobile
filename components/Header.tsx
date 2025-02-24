@@ -1,24 +1,39 @@
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Image, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Image } from 'expo-image';
+import { useNavigation } from '@react-navigation/native';
 
 export default function Header() {
+  const navigation = useNavigation();
+
   return (
     <View style={styles.header}>
-      <TouchableOpacity style={styles.menuButton}>
-        <Ionicons name="menu" size={24} color="#000" />
+      {/* Settings Icon */}
+      <TouchableOpacity style={styles.iconButton}>
+        <Ionicons name="settings-outline" size={24} color="#000" />
       </TouchableOpacity>
-      
+
+      {/* Logo Image */}
       <View style={styles.logoContainer}>
-        <Text style={styles.logoText}>Last<Text style={styles.logoHighlight}>min</Text></Text>
+        <Image
+          source={require('../assets/images/lastmin.png')}
+          style={styles.logo}
+        />
       </View>
 
+      {/* Notification Icon & Profile Picture */}
       <View style={styles.rightIcons}>
         <TouchableOpacity style={styles.iconButton}>
           <Ionicons name="notifications-outline" size={24} color="#000" />
         </TouchableOpacity>
-        <TouchableOpacity style={styles.avatarContainer}>
 
+        <TouchableOpacity
+          style={styles.avatarContainer}
+          onPress={() => navigation.navigate('/Profile')}
+        >
+          <Image
+            source={require('../assets/images/profile.jpg')}
+            style={styles.avatar}
+          />
         </TouchableOpacity>
       </View>
     </View>
@@ -35,27 +50,22 @@ const styles = StyleSheet.create({
     paddingBottom: 16,
     backgroundColor: '#fff',
   },
-  menuButton: {
+  iconButton: {
     padding: 8,
   },
   logoContainer: {
     flex: 1,
     alignItems: 'center',
   },
-  logoText: {
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  logoHighlight: {
-    color: '#6366f1',
+  logo: {
+    width: 100,
+    height: 40,
+    resizeMode: 'contain',
   },
   rightIcons: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
-  },
-  iconButton: {
-    padding: 8,
   },
   avatarContainer: {
     width: 32,

@@ -1,5 +1,12 @@
 import { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Image,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link } from 'expo-router';
 
@@ -11,8 +18,14 @@ export default function LoginScreen() {
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          <Text style={styles.logo}>Last<Text style={styles.logoHighlight}>min</Text></Text>
-          <Text style={styles.welcomeText}>Welcome back you've been missed!</Text>
+          {/* Logo Image */}
+          <Image
+            source={require('../assets/images/lastmin.png')}
+            style={styles.logo}
+          />
+          <Text style={styles.welcomeText}>
+            Welcome back, you've been missed!
+          </Text>
         </View>
 
         <View style={styles.form}>
@@ -90,12 +103,10 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   logo: {
-    fontSize: 32,
-    fontWeight: 'bold',
+    width: 120,
+    height: 50,
+    resizeMode: 'contain',
     marginBottom: 16,
-  },
-  logoHighlight: {
-    color: '#6366f1',
   },
   welcomeText: {
     fontSize: 18,
