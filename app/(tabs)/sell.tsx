@@ -13,9 +13,15 @@ import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 import { addProduct } from '../service/service';
 import Product from '../entities/product';
+import { jwtDecode } from 'jwt-decode';
+import { Platform } from 'react-native';
 
 type ProductType = 'ticket' | 'gift-card' | 'subscription';
-
+interface DecodedToken {
+  id: string;
+  role: string;
+  iat: number; // Issued at timestamp
+}
 export default function SellScreen() {
   const router = useRouter();
   const [selectedType, setSelectedType] = useState<ProductType | null>(null);
@@ -70,8 +76,36 @@ export default function SellScreen() {
       alert('Please fill in all fields.');
       return;
     }
+    const getToken = async () => {
+      if (Platform.OS === 'web') {
+        return localStorage.getItem('authToken');
+      } else {
+        return await SecureStore.getItemAsync('authToken');
+      }
+    };
+    const getTokenData = (): DecodedToken | null => {
+      try {
+        const token = getToken();
+        if (!token) {
+          console.log('No token found');
+          return null;
+        }
 
-    const hardcodedUserId = '65d1234567890abcdef12345'; // Replace with actual user ID
+        const decoded: DecodedToken = jwtDecode<DecodedToken>(token);
+        console.log('Decoded Token:', decoded);
+
+        return decoded; // You can use this data (e.g., userId, email, etc.)
+      } catch (error) {
+        console.error('Error retrieving or decoding token:', error);
+        return null;
+      }
+    };
+    const decodedToken = getTokenData();
+    if (decodedToken) {
+      console.log('User ID:', decodedToken.id);
+    }
+
+    const hardcodedUserId = decodedToken.id; // Replace with actual user ID
 
     const newProduct = {
       sellerId: hardcodedUserId,

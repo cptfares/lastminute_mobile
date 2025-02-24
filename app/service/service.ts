@@ -1,3 +1,4 @@
+import { RegisterUser } from './../entities/user';
 import axios from "axios";
 import {User} from "../entities/user"
 import { Product } from "app/entities/product";
@@ -9,23 +10,43 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+interface LoginResponse {
+  token: string;
+}
+interface ApiResponse<T> {
+data: T;
+msg?: string;
+}
+
 
 // Authentication APIs
-export const loginUser = async (email: string, password: string): Promise<any> => {
+export const loginUser = async (email: string, password: string): Promise<LoginResponse & { user: User }> => {
   try {
-    const response = await api.post("/signIn", { email, password });
+    const response = await api.post<ApiResponse<{ user: User; token: string }>>('/signIn', { email, password });
+
+    console.log("Login API Response:", response.data);
+
+    if (!response.data.token) {
+      throw new Error("Invalid response format: Missing token");
+     
+    }
+
     return response.data;
   } catch (error: any) {
-    throw new Error(error.response?.data.msg || "Error during login");
+    console.error("Login Error:", error.response?.data || error.message);
+    throw new Error(error.response?.data?.msg || "Error during login");
   }
 };
 
-export const registerUser = async (userData: Partial<User>): Promise<any> => {
+
+
+export const registerUser = async (userData: RegisterUser): Promise<User> => {
   try {
-    const response = await api.post("/users", userData);
-    return response.data;
+    const response = await api.post<{ data: User }>('/users', userData);
+    return response.data.data;
   } catch (error: any) {
-    throw new Error(error.response?.data.msg || "Error during registration");
+    console.error("Registration Error:", error);
+    throw new Error(error.response?.data?.msg || 'Error during registration');
   }
 };
 

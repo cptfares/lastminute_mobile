@@ -6,21 +6,55 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import { registerUser } from '../app/service/service'; // Import register function
+import User, { RegisterUser } from '../app/entities/user'; // Import the User type if needed
 
 export default function SignupScreen() {
-  const [name, setName] = useState('');
+  const [userName, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [age, setConfirmAge] = useState('');
+
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+
+  const handleSignup = async () => {
+    if (!userName || !email || !password || !confirmPassword) {
+      Alert.alert('Error', 'All fields are required.');
+      return;
+    }
+
+    if (password !== confirmPassword) {
+      Alert.alert('Error', 'Passwords do not match.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const userData: RegisterUser = { userName, email, password, age };
+      const newUser = await registerUser(userData);
+
+      Alert.alert('Success', 'Account created successfully!');
+
+      // Navigate to home screen
+      router.replace('/login');
+    } catch (error: any) {
+      Alert.alert('Registration Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          {/* Logo Image */}
           <Image
             source={require('../assets/images/lastmin.png')}
             style={styles.logo}
@@ -33,8 +67,8 @@ export default function SignupScreen() {
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder="Name"
-            value={name}
+            placeholder="name"
+            value={userName}
             onChangeText={setName}
             autoCapitalize="words"
             placeholderTextColor="#6b7280"
@@ -68,8 +102,25 @@ export default function SignupScreen() {
             placeholderTextColor="#6b7280"
           />
 
-          <TouchableOpacity style={styles.loginButton}>
-            <Text style={styles.loginButtonText}>Sign Up</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="age"
+            value={age}
+            onChangeText={setConfirmAge}
+            secureTextEntry
+            placeholderTextColor="#6b7280"
+          />
+
+          <TouchableOpacity
+            style={styles.signupButton}
+            onPress={handleSignup}
+            disabled={loading}
+          >
+            {loading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text style={styles.signupButtonText}>Sign Up</Text>
+            )}
           </TouchableOpacity>
 
           <View style={styles.divider}>
@@ -105,33 +156,12 @@ export default function SignupScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  content: {
-    flex: 1,
-    paddingHorizontal: 24,
-    paddingTop: 60,
-  },
-  header: {
-    alignItems: 'center',
-    marginBottom: 48,
-  },
-  logo: {
-    width: 120,
-    height: 50,
-    resizeMode: 'contain',
-    marginBottom: 16,
-  },
-  welcomeText: {
-    fontSize: 18,
-    color: '#374151',
-    textAlign: 'center',
-  },
-  form: {
-    gap: 16,
-  },
+  container: { flex: 1, backgroundColor: '#fff' },
+  content: { flex: 1, paddingHorizontal: 24, paddingTop: 60 },
+  header: { alignItems: 'center', marginBottom: 48 },
+  logo: { width: 120, height: 50, resizeMode: 'contain', marginBottom: 16 },
+  welcomeText: { fontSize: 18, color: '#374151', textAlign: 'center' },
+  form: { gap: 16 },
   input: {
     height: 52,
     borderWidth: 1,
@@ -141,7 +171,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
     backgroundColor: '#fff',
   },
-  loginButton: {
+  signupButton: {
     height: 52,
     backgroundColor: '#6366f1',
     borderRadius: 12,
@@ -149,31 +179,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  loginButtonText: {
-    color: '#fff',
-    fontSize: 16,
-    fontWeight: '600',
-  },
+  signupButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 24,
     gap: 8,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#e5e7eb',
-  },
-  dividerText: {
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  socialButtons: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    gap: 16,
-  },
+  dividerLine: { flex: 1, height: 1, backgroundColor: '#e5e7eb' },
+  dividerText: { color: '#6b7280', fontSize: 14 },
+  socialButtons: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
   socialButton: {
     width: 52,
     height: 52,
@@ -187,13 +202,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: 24,
   },
-  signupText: {
-    color: '#6b7280',
-    fontSize: 14,
-  },
-  signupLink: {
-    color: '#6366f1',
-    fontSize: 14,
-    fontWeight: '500',
-  },
+  signupText: { color: '#6b7280', fontSize: 14 },
+  signupLink: { color: '#6366f1', fontSize: 14, fontWeight: '500' },
 });

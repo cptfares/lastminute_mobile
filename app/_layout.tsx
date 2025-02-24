@@ -40,7 +40,7 @@ export default function RootLayout() {
           <Stack.Screen name="onboarding" />
         </Stack>
       ) : (
-        <Stack screenOptions={{ headerShown: false }}>
+        <Stack screenOptions={{ headerShown: false }} initialRouteName="login">
           <Stack.Screen name="login" />
           <Stack.Screen name="signup" />
           <Stack.Screen name="(tabs)" />

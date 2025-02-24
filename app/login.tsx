@@ -6,19 +6,74 @@ import {
   TouchableOpacity,
   StyleSheet,
   Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { Link } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import { loginUser } from '../app/service/service';
+import * as SecureStore from 'expo-secure-store';
+import { Platform } from 'react-native';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  const router = useRouter(); // Use router for navigation
+
+  const handleLogin = async () => {
+    if (!email || !password) {
+      Alert.alert('Error', 'Please enter both email and password.');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const { token, user } = await loginUser(email, password);
+      console.log('Extracted Token :', token);
+
+      const saveToken = async (token: string) => {
+        if (Platform.OS === 'web') {
+          localStorage.setItem('authToken', token); // ✅ Use localStorage for web
+        } else {
+          await SecureStore.setItemAsync('authToken', token); // ✅ Use SecureStore for mobile
+        }
+      };
+
+      const getToken = async () => {
+        if (Platform.OS === 'web') {
+          return localStorage.getItem('authToken');
+        } else {
+          return await SecureStore.getItemAsync('authToken');
+        }
+      };
+
+      if (token) {
+        console.log('Extracted Token:', token);
+
+        await saveToken(token);
+
+        const storedToken = await getToken();
+
+        console.log('Stored Token:', storedToken);
+
+        if (!storedToken) {
+          console.error('Failed to store token.');
+        } else {
+          Alert.alert('Success', 'Login successful!');
+          router.replace('/');
+        }
+      }
+    } catch (error: any) {
+      Alert.alert('Login Failed', error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View style={styles.container}>
       <View style={styles.content}>
         <View style={styles.header}>
-          {/* Logo Image */}
           <Image
             source={require('../assets/images/lastmin.png')}
             style={styles.logo}
@@ -52,8 +107,14 @@ export default function LoginScreen() {
             <Text style={styles.forgotPasswordText}>Forgot your password?</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={styles.loginButton}>
-            <Text style={styles.loginButtonText}>Login</Text>
+          <TouchableOpacity
+            style={[styles.loginButton, loading && styles.disabledButton]}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <Text style={styles.loginButtonText}>
+              {loading ? 'Logging in...' : 'Login'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.divider}>
@@ -140,6 +201,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 8,
+  },
+  disabledButton: {
+    backgroundColor: '#9ca3af',
   },
   loginButtonText: {
     color: '#fff',
