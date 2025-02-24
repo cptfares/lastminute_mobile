@@ -81,21 +81,26 @@ export default function HomeScreen() {
           <CategoryCard
             icon="ticket"
             title="Event Tickets & Passes"
-            onPress={() => handleCategoryPress('events')}
+            onPress={() => handleCategoryPress('concert_ticket')}
+          />
+          <CategoryCard
+            icon="game-controller"
+            title="gaming accounts"
+            onPress={() => handleCategoryPress('gaming_account')}
           />
           <CategoryCard
             icon="card"
-            title="Digital Gift Cards"
-            onPress={() => handleCategoryPress('gift-cards')}
+            title="gift cards "
+            onPress={() => handleCategoryPress('gift_card')}
           />
           <CategoryCard
-            icon="card"
-            title="Digital Gift Cards"
-            onPress={() => handleCategoryPress('gift-cards')}
+            icon="people"
+            title="social media accounts "
+            onPress={() => handleCategoryPress('social_media_account')}
           />
           <CategoryCard
-            icon="repeat"
-            title="Subscriptions & Services"
+            icon="document"
+            title="Photos and Documents"
             onPress={() => handleCategoryPress('subscriptions')}
           />
         </ScrollView>
@@ -122,7 +127,7 @@ export default function HomeScreen() {
         </View>
         <View style={styles.featuredSection}>
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Featured Offers</Text>
+            <Text style={styles.sectionTitle}>for you </Text>
             <TouchableOpacity>
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>

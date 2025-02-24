@@ -1,4 +1,4 @@
-interface User {
+export default  interface User {
     _id: string;
     userName: string;
     createdAt: string;

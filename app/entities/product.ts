@@ -1,4 +1,4 @@
-interface Product {
+export default  interface Product {
     _id: string;
     sellerId: string; // Reference to User
     type: "concert_ticket" | "movie_ticket" | "gaming_account" | "social_media_account";

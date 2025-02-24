@@ -11,6 +11,8 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
+import { addProduct } from '../service/service';
+import Product from '../entities/product';
 
 type ProductType = 'ticket' | 'gift-card' | 'subscription';
 
@@ -27,7 +29,7 @@ export default function SellScreen() {
 
   const productTypes = [
     {
-      id: 'ticket' as ProductType,
+      id: 'concert_ticket' as ProductType,
       title: 'Event Tickets & Passes',
       icon: 'ticket',
       description: 'Concert tickets, sports events, etc.',
@@ -39,17 +41,65 @@ export default function SellScreen() {
       description: 'Amazon, Netflix, gaming cards, etc.',
     },
     {
-      id: 'subscription' as ProductType,
-      title: 'Subscriptions & Services',
-      icon: 'repeat',
-      description: 'Software licenses, memberships, etc.',
+      id: 'gaming_account' as ProductType,
+      title: 'Gaming accounts',
+      icon: 'game-controller',
+      description: 'Valorant, Fortniet, CS2, etc.',
+    },
+    {
+      id: 'social_media_account' as ProductType,
+      title: 'social media account',
+      icon: 'people',
+      description: 'facebook, instagram, tiktok, etc.',
+    },
+    {
+      id: 'document' as ProductType,
+      title: 'Photos and Documents',
+      icon: 'document',
+      description: 'Homework, Exams, useful photos, etc.',
     },
   ];
 
-  const handleSubmit = () => {
-    // Here you would typically upload the data to your backend
-    console.log('Submitting:', { ...formData, type: selectedType, imageUrl });
-    router.push('/');
+  const handleSubmit = async () => {
+    if (
+      !selectedType ||
+      !formData.title ||
+      !formData.price ||
+      !formData.description
+    ) {
+      alert('Please fill in all fields.');
+      return;
+    }
+
+    const hardcodedUserId = '65d1234567890abcdef12345'; // Replace with actual user ID
+
+    const newProduct = {
+      sellerId: hardcodedUserId,
+      type: selectedType,
+      title: formData.title,
+      description: formData.description,
+      price: parseFloat(formData.price),
+      quantity: parseInt(formData.quantity, 10),
+      currency: 'USD',
+      images: imageUrl ? [imageUrl] : [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      status: 'available',
+    };
+
+    try {
+      const response = await addProduct(newProduct);
+      console.log('Product added successfully:', response);
+      setFormData({
+        title: '',
+        price: '',
+        description: '',
+        quantity: '1',
+      });
+      router.push('/');
+    } catch (error) {
+      console.error('Error adding product:', error);
+    }
   };
 
   return (
@@ -115,7 +165,7 @@ export default function SellScreen() {
             </View>
 
             <View style={styles.inputGroup}>
-              <Text style={styles.label}>Price ($)</Text>
+              <Text style={styles.label}>Price (LST)</Text>
               <TextInput
                 style={styles.input}
                 value={formData.price}

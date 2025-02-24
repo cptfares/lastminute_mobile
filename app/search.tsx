@@ -1,93 +1,76 @@
-import { View, Text, TouchableOpacity, Image, StyleSheet, ScrollView, TextInput } from 'react-native';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  ScrollView,
+  TextInput,
+  ActivityIndicator,
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import { useState, useEffect } from 'react';
-
-type Product = {
-  id: string;
-  name: string;
-  price: string;
-  image: string;
-  category: string;
-};
-
-const allProducts: Product[] = [
-  {
-    id: '1',
-    name: 'Coachella Weekend Pass',
-    price: '$110.00',
-    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60',
-    category: 'events',
-  },
-  {
-    id: '2',
-    name: 'New York Broadway Show',
-    price: '$128.97',
-    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60',
-    category: 'events',
-  },
-  {
-    id: '3',
-    name: 'UEFA Champions League',
-    price: '$150.97',
-    image: 'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60',
-    category: 'events',
-  },
-  {
-    id: '4',
-    name: 'Amazon Gift Card',
-    price: '$50.00',
-    image: 'https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?w=800&auto=format&fit=crop&q=60',
-    category: 'gift-cards',
-  },
-  {
-    id: '5',
-    name: 'Netflix Subscription',
-    price: '$15.99',
-    image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=800&auto=format&fit=crop&q=60',
-    category: 'subscriptions',
-  },
-];
+import { getAllProducts } from './service/service'; // Import API function
+import Product from './entities/product';
 
 export default function SearchScreen() {
   const router = useRouter();
-  const { query, category } = useLocalSearchParams<{ query?: string; category?: string }>();
+  const { query, category } = useLocalSearchParams<{
+    query?: string;
+    category?: string;
+  }>();
   const [searchQuery, setSearchQuery] = useState(query || '');
+  const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
-    let filtered = [...allProducts];
+    const fetchProducts = async () => {
+      try {
+        const response = await getAllProducts();
+        // Check if the response contains an array of products.
+        if (Array.isArray(response.products)) {
+          setProducts(response.products); // Update products with the correct array
+          setFilteredProducts(response.products); // Same for filtered products
+        } else {
+          console.error('API did not return a valid products array');
+        }
+      } catch (error) {
+        console.error('Error fetching products:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  useEffect(() => {
+    if (!Array.isArray(products)) return; // Ensure it's an array before filtering
+
+    let filtered = [...products];
 
     if (category) {
-      filtered = filtered.filter(product => product.category === category);
+      filtered = filtered.filter((product) => product.type === category);
     }
 
     if (searchQuery) {
-      filtered = filtered.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+      filtered = filtered.filter((product) =>
+        product.title.toLowerCase().includes(searchQuery.toLowerCase())
       );
     }
 
     setFilteredProducts(filtered);
-  }, [searchQuery, category]);
-
-  const getCategoryTitle = () => {
-    switch (category) {
-      case 'events':
-        return 'Event Tickets & Passes';
-      case 'gift-cards':
-        return 'Digital Gift Cards';
-      case 'subscriptions':
-        return 'Subscriptions & Services';
-      default:
-        return 'Search Results';
-    }
-  };
+  }, [searchQuery, category, products]);
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
         <View style={styles.searchContainer}>
@@ -102,30 +85,54 @@ export default function SearchScreen() {
         </View>
       </View>
 
-      <View style={styles.resultsHeader}>
-        <Text style={styles.resultsTitle}>
-          {getCategoryTitle()} ({filteredProducts.length})
-        </Text>
-      </View>
+      {loading ? (
+        <View style={styles.loader}>
+          <ActivityIndicator size="large" color="#000" />
+        </View>
+      ) : (
+        <>
+          <View style={styles.resultsHeader}>
+            <Text style={styles.resultsTitle}>
+              Search Results ({filteredProducts.length})
+            </Text>
+          </View>
 
-      <ScrollView style={styles.content} contentContainerStyle={styles.contentContainer}>
-        {filteredProducts.map((product) => (
-          <TouchableOpacity
-            key={product.id}
-            style={styles.productCard}
-            onPress={() => router.push(`/product/${product.id}`)}
+          <ScrollView
+            style={styles.content}
+            contentContainerStyle={styles.contentContainer}
           >
-            <Image source={{ uri: product.image }} style={styles.productImage} />
-            <View style={styles.productInfo}>
-              <Text style={styles.productName}>{product.name}</Text>
-              <Text style={styles.productPrice}>{product.price}</Text>
-            </View>
-            <TouchableOpacity style={styles.favoriteButton}>
-              <Ionicons name="heart-outline" size={24} color="#000" />
-            </TouchableOpacity>
-          </TouchableOpacity>
-        ))}
-      </ScrollView>
+            {Array.isArray(filteredProducts) && filteredProducts.length > 0 ? (
+              filteredProducts.map((product) => (
+                <TouchableOpacity
+                  key={product._id}
+                  style={styles.productCard}
+                  onPress={() => router.push(`/product/${product._id}`)}
+                >
+                  {product.images && product.images.length > 0 ? (
+                    <Image
+                      source={{ uri: product.images[0] }}
+                      style={styles.productImage}
+                    />
+                  ) : (
+                    <View style={styles.placeholderImage}>
+                      <Text>No Image</Text>
+                    </View>
+                  )}
+                  <View style={styles.productInfo}>
+                    <Text style={styles.productName}>{product.title}</Text>
+                    <Text style={styles.productPrice}>{product.price} LST</Text>
+                  </View>
+                  <TouchableOpacity style={styles.favoriteButton}>
+                    <Ionicons name="heart-outline" size={24} color="#000" />
+                  </TouchableOpacity>
+                </TouchableOpacity>
+              ))
+            ) : (
+              <Text style={styles.noResultsText}>No products found.</Text>
+            )}
+          </ScrollView>
+        </>
+      )}
     </View>
   );
 }
@@ -189,6 +196,13 @@ const styles = StyleSheet.create({
     height: 200,
     backgroundColor: '#e5e7eb',
   },
+  placeholderImage: {
+    width: '100%',
+    height: 200,
+    backgroundColor: '#d1d5db',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   productInfo: {
     padding: 16,
   },
@@ -212,5 +226,16 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.9)',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  loader: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  noResultsText: {
+    textAlign: 'center',
+    marginTop: 20,
+    fontSize: 16,
+    color: '#6b7280',
   },
 });
