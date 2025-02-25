@@ -1,8 +1,38 @@
-import { Tabs } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { Tabs, Redirect } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useAuth } from '../context/AuthContext';
 import { AuthProvider } from '../context/AuthContext';
 
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
 export default function TabLayout() {
+  const { user, isLoading } = useAuth();
+  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    checkFirstLaunch();
+  }, []);
+
+  const checkFirstLaunch = async () => {
+    try {
+      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
+      if (hasLaunched === null) {
+        await AsyncStorage.setItem('hasLaunched', 'true');
+        setIsFirstLaunch(true);
+      } else {
+        setIsFirstLaunch(false);
+      }
+    } catch (err) {
+      setIsFirstLaunch(false);
+    }
+  };
+
+  if (isFirstLaunch === null || isLoading) return null; // Show nothing while checking
+
+  if (isFirstLaunch) return <Redirect href="/onboarding" />;
+  if (!user) return <Redirect href="/login" />;
+
   return (
     <AuthProvider>
       <Tabs

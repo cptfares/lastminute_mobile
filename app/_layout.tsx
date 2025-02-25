@@ -34,13 +34,13 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      {isFirstLaunch ? (
-        <Stack screenOptions={{ headerShown: false }}>
-          <Stack.Screen name="onboarding" />
-        </Stack>
-      ) : (
-        <AuthProvider>
+    <AuthProvider>
+      <View style={{ flex: 1 }}>
+        {isFirstLaunch ? (
+          <Stack screenOptions={{ headerShown: false }}>
+            <Stack.Screen name="onboarding" />
+          </Stack>
+        ) : (
           <Stack screenOptions={{ headerShown: false }}>
             <Stack.Screen name="login" />
             <Stack.Screen name="signup" />
@@ -60,9 +60,9 @@ export default function RootLayout() {
             />
             <Stack.Screen name="order/[id]" />
           </Stack>
-        </AuthProvider>
-      )}
-      <StatusBar style="auto" />
-    </View>
+        )}
+        <StatusBar style="auto" />
+      </View>
+    </AuthProvider>
   );
 }

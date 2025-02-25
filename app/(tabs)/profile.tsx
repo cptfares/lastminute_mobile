@@ -53,9 +53,7 @@ export default function ProfileScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.header}>
           <Image
-            source={{
-              uri: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=800&auto=format&fit=crop&q=60',
-            }}
+            source={require('../../assets/images/profile.jpg')}
             style={styles.profileImage}
           />
           <Text style={styles.name}>{user.userName}</Text>
@@ -82,15 +80,6 @@ export default function ProfileScreen() {
               onPress={() => router.push('/edit-profile')}
             >
               <Text style={styles.editButtonText}>Edit profile</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.signOutButton}
-              onPress={async () => {
-                await signOut();
-                router.replace('/login');
-              }}
-            >
-              <Text style={styles.signOutButtonText}>Sign Out</Text>
             </TouchableOpacity>
           </View>
 
@@ -128,6 +117,15 @@ export default function ProfileScreen() {
             </View>
           ))}
         </View>
+        <TouchableOpacity
+          style={styles.signOutButton}
+          onPress={async () => {
+            await signOut();
+            router.replace('/login');
+          }}
+        >
+          <Text style={styles.signOutButtonText}>Sign Out</Text>
+        </TouchableOpacity>
       </ScrollView>
     </View>
   );
