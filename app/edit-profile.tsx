@@ -9,22 +9,41 @@ import {
   ScrollView,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useAuth } from './context/AuthContext';
+import { updateUser } from './service/service';
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const { user, token, updateUserLocally } = useAuth(); // Import update function
+
+  const [isLoading, setIsLoading] = useState(false);
   const [formData, setFormData] = useState({
-    name: 'Ayla Fahed',
-    email: 'aylafahed@gmail.com',
-    phone: '+216 99 234 450',
-    location: 'Tunisia',
+    userName: user?.userName || '',
+    email: user?.email || '',
+    age: user?.age || '',
   });
 
-  const handleSave = () => {
-    // Here you would typically save the data to your backend
-    router.back();
+  const handleSave = async () => {
+    if (!user?._id) {
+      Alert.alert('Error', 'User not found');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      await updateUser(user._id, formData); // API call
+      updateUserLocally(formData); // Update local user state
+      Alert.alert('Success', 'Profile updated successfully');
+      router.back();
+    } catch (error: any) {
+      Alert.alert('Error', error.message || 'Failed to update profile');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -61,8 +80,10 @@ export default function EditProfileScreen() {
             <Text style={styles.label}>NAME</Text>
             <TextInput
               style={styles.input}
-              value={formData.name}
-              onChangeText={(text) => setFormData({ ...formData, name: text })}
+              value={formData.userName}
+              onChangeText={(text) =>
+                setFormData({ ...formData, userName: text })
+              }
               placeholder="Enter your name"
             />
           </View>
@@ -80,29 +101,27 @@ export default function EditProfileScreen() {
           </View>
 
           <View style={styles.inputGroup}>
-            <Text style={styles.label}>PHONE NUMBER</Text>
+            <Text style={styles.label}>AGE</Text>
             <TextInput
               style={styles.input}
-              value={formData.phone}
-              onChangeText={(text) => setFormData({ ...formData, phone: text })}
-              placeholder="Enter your phone number"
-              keyboardType="phone-pad"
+              value={formData.age}
+              onChangeText={(text) => setFormData({ ...formData, age: text })}
+              placeholder="Enter your age"
+              keyboardType="numeric"
             />
-          </View>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.label}>LOCATION</Text>
-            <TouchableOpacity style={styles.locationInput}>
-              <Text style={styles.locationText}>{formData.location}</Text>
-              <Ionicons name="chevron-down" size={20} color="#6b7280" />
-            </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
 
       <View style={styles.footer}>
-        <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
-          <Text style={styles.saveButtonText}>SAVE CHANGES</Text>
+        <TouchableOpacity
+          style={[styles.saveButton, isLoading && styles.saveButtonDisabled]}
+          onPress={handleSave}
+          disabled={isLoading}
+        >
+          <Text style={styles.saveButtonText}>
+            {isLoading ? 'SAVING...' : 'SAVE CHANGES'}
+          </Text>
         </TouchableOpacity>
       </View>
     </KeyboardAvoidingView>
@@ -179,17 +198,6 @@ const styles = StyleSheet.create({
     borderBottomColor: '#e5e7eb',
     fontSize: 16,
   },
-  locationInput: {
-    height: 48,
-    borderBottomWidth: 1,
-    borderBottomColor: '#e5e7eb',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  locationText: {
-    fontSize: 16,
-  },
   footer: {
     padding: 16,
     borderTopWidth: 1,
@@ -201,6 +209,9 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  saveButtonDisabled: {
+    backgroundColor: '#a5a6f6',
   },
   saveButtonText: {
     color: '#fff',

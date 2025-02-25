@@ -1,4 +1,4 @@
-interface Transaction {
+export default  interface Transaction {
     _id: string;
     buyerId: string; // Reference to User
     sellerId: string; // Reference to User

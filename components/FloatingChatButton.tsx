@@ -2,10 +2,15 @@ import { TouchableOpacity, StyleSheet, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useRef, useEffect } from 'react';
+import { useAuth } from '../app/context/AuthContext';
 
 export default function FloatingChatButton() {
   const router = useRouter();
+  const { user } = useAuth();
   const scaleAnim = useRef(new Animated.Value(1)).current;
+
+  // Only show chat button if user is logged in
+  if (!user) return null;
 
   const pulseAnimation = () => {
     Animated.sequence([
@@ -28,7 +33,9 @@ export default function FloatingChatButton() {
   }, []);
 
   return (
-    <Animated.View style={[styles.container, { transform: [{ scale: scaleAnim }] }]}>
+    <Animated.View
+      style={[styles.container, { transform: [{ scale: scaleAnim }] }]}
+    >
       <TouchableOpacity
         style={styles.button}
         onPress={() => router.push('/chat')}

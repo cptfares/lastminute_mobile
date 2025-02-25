@@ -5,7 +5,7 @@ import { Product } from "app/entities/product";
 import { Transaction } from "app/entities/transaction";
 
 const api = axios.create({
-  baseURL: "http://192.168.136.21:6005/api",
+  baseURL: "http://192.168.16.241:6005/api",
   headers: {
     "Content-Type": "application/json",
   },

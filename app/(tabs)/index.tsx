@@ -9,6 +9,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
+import { AuthProvider } from '../context/AuthContext';
 
 function CategoryCard({
   icon,
@@ -49,104 +50,106 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <Header />
+    <AuthProvider>
+      <View style={styles.container}>
+        <Header />
 
-      <ScrollView style={styles.content}>
-        <View style={styles.searchContainer}>
-          <TouchableOpacity
-            style={styles.searchBar}
-            onPress={() => router.push('/search')}
+        <ScrollView style={styles.content}>
+          <View style={styles.searchContainer}>
+            <TouchableOpacity
+              style={styles.searchBar}
+              onPress={() => router.push('/search')}
+            >
+              <Ionicons name="search" size={20} color="#6b7280" />
+              <TextInput
+                placeholder="Search assets"
+                style={styles.searchInput}
+                placeholderTextColor="#6b7280"
+                returnKeyType="search"
+                onSubmitEditing={(e) => handleSearch(e.nativeEvent.text)}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity style={styles.filterButton}>
+              <Ionicons name="options-outline" size={20} color="#000" />
+            </TouchableOpacity>
+          </View>
+
+          <Text style={styles.sectionTitle}>Explore Categories</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.categoriesScroll}
           >
-            <Ionicons name="search" size={20} color="#6b7280" />
-            <TextInput
-              placeholder="Search assets"
-              style={styles.searchInput}
-              placeholderTextColor="#6b7280"
-              returnKeyType="search"
-              onSubmitEditing={(e) => handleSearch(e.nativeEvent.text)}
+            <CategoryCard
+              icon="ticket"
+              title="Event Tickets & Passes"
+              onPress={() => handleCategoryPress('concert_ticket')}
             />
-          </TouchableOpacity>
-          <TouchableOpacity style={styles.filterButton}>
-            <Ionicons name="options-outline" size={20} color="#000" />
-          </TouchableOpacity>
-        </View>
+            <CategoryCard
+              icon="game-controller"
+              title="gaming accounts"
+              onPress={() => handleCategoryPress('gaming_account')}
+            />
+            <CategoryCard
+              icon="card"
+              title="gift cards "
+              onPress={() => handleCategoryPress('gift_card')}
+            />
+            <CategoryCard
+              icon="people"
+              title="social media accounts "
+              onPress={() => handleCategoryPress('social_media_account')}
+            />
+            <CategoryCard
+              icon="document"
+              title="Photos and Documents"
+              onPress={() => handleCategoryPress('document')}
+            />
+          </ScrollView>
 
-        <Text style={styles.sectionTitle}>Explore Categories</Text>
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          style={styles.categoriesScroll}
-        >
-          <CategoryCard
-            icon="ticket"
-            title="Event Tickets & Passes"
-            onPress={() => handleCategoryPress('concert_ticket')}
-          />
-          <CategoryCard
-            icon="game-controller"
-            title="gaming accounts"
-            onPress={() => handleCategoryPress('gaming_account')}
-          />
-          <CategoryCard
-            icon="card"
-            title="gift cards "
-            onPress={() => handleCategoryPress('gift_card')}
-          />
-          <CategoryCard
-            icon="people"
-            title="social media accounts "
-            onPress={() => handleCategoryPress('social_media_account')}
-          />
-          <CategoryCard
-            icon="document"
-            title="Photos and Documents"
-            onPress={() => handleCategoryPress('subscriptions')}
-          />
+          <View style={styles.featuredSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Featured Offers</Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAllText}>View all</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.featuredCard}
+              onPress={() => router.push('/product/1')}
+            >
+              <View style={styles.featuredContent}>
+                <Text style={styles.featuredTitle}>Exclusive Offer! ⚡️</Text>
+                <Text style={styles.featuredDescription}>
+                  Get this document for just $10. Limited time only!
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+          <View style={styles.featuredSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>for you </Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAllText}>View all</Text>
+              </TouchableOpacity>
+            </View>
+
+            <TouchableOpacity
+              style={styles.featuredCard}
+              onPress={() => router.push('/product/1')}
+            >
+              <View style={styles.featuredContent}>
+                <Text style={styles.featuredTitle}>Exclusive Offer! ⚡️</Text>
+                <Text style={styles.featuredDescription}>
+                  Get this document for just $10. Limited time only!
+                </Text>
+              </View>
+            </TouchableOpacity>
+          </View>
         </ScrollView>
-
-        <View style={styles.featuredSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Featured Offers</Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View all</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.featuredCard}
-            onPress={() => router.push('/product/1')}
-          >
-            <View style={styles.featuredContent}>
-              <Text style={styles.featuredTitle}>Exclusive Offer! ⚡️</Text>
-              <Text style={styles.featuredDescription}>
-                Get this document for just $10. Limited time only!
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-        <View style={styles.featuredSection}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>for you </Text>
-            <TouchableOpacity>
-              <Text style={styles.viewAllText}>View all</Text>
-            </TouchableOpacity>
-          </View>
-
-          <TouchableOpacity
-            style={styles.featuredCard}
-            onPress={() => router.push('/product/1')}
-          >
-            <View style={styles.featuredContent}>
-              <Text style={styles.featuredTitle}>Exclusive Offer! ⚡️</Text>
-              <Text style={styles.featuredDescription}>
-                Get this document for just $10. Limited time only!
-              </Text>
-            </View>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
-    </View>
+      </View>
+    </AuthProvider>
   );
 }
 

@@ -5,27 +5,33 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
   Alert,
   ActivityIndicator,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { registerUser } from '../app/service/service'; // Import register function
-import User, { RegisterUser } from '../app/entities/user'; // Import the User type if needed
+import { useAuth } from './context/AuthContext';
 
 export default function SignupScreen() {
-  const [userName, setName] = useState('');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [confirmPassword, setConfirmPassword] = useState('');
-  const [age, setConfirmAge] = useState('');
-
+  const [formData, setFormData] = useState({
+    userName: '',
+    email: '',
+    password: '',
+    confirmPassword: '',
+    age: '',
+  });
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { signUp } = useAuth();
 
   const handleSignup = async () => {
-    if (!userName || !email || !password || !confirmPassword) {
+    const { userName, email, password, confirmPassword, age } = formData;
+
+    if (!userName || !email || !password || !confirmPassword || !age) {
       Alert.alert('Error', 'All fields are required.');
       return;
     }
@@ -37,13 +43,15 @@ export default function SignupScreen() {
 
     setLoading(true);
     try {
-      const userData: RegisterUser = { userName, email, password, age };
-      const newUser = await registerUser(userData);
+      await signUp({
+        userName,
+        email,
+        password,
+        age,
+      });
 
       Alert.alert('Success', 'Account created successfully!');
-
-      // Navigate to home screen
-      router.replace('/login');
+      router.replace('/(tabs)');
     } catch (error: any) {
       Alert.alert('Registration Failed', error.message);
     } finally {
@@ -52,8 +60,11 @@ export default function SignupScreen() {
   };
 
   return (
-    <View style={styles.container}>
-      <View style={styles.content}>
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
+      <ScrollView style={styles.content}>
         <View style={styles.header}>
           <Image
             source={require('../assets/images/lastmin.png')}
@@ -67,9 +78,11 @@ export default function SignupScreen() {
         <View style={styles.form}>
           <TextInput
             style={styles.input}
-            placeholder="name"
-            value={userName}
-            onChangeText={setName}
+            placeholder="Full Name"
+            value={formData.userName}
+            onChangeText={(text) =>
+              setFormData({ ...formData, userName: text })
+            }
             autoCapitalize="words"
             placeholderTextColor="#6b7280"
           />
@@ -77,8 +90,8 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Email"
-            value={email}
-            onChangeText={setEmail}
+            value={formData.email}
+            onChangeText={(text) => setFormData({ ...formData, email: text })}
             keyboardType="email-address"
             autoCapitalize="none"
             placeholderTextColor="#6b7280"
@@ -87,8 +100,10 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Password"
-            value={password}
-            onChangeText={setPassword}
+            value={formData.password}
+            onChangeText={(text) =>
+              setFormData({ ...formData, password: text })
+            }
             secureTextEntry
             placeholderTextColor="#6b7280"
           />
@@ -96,23 +111,28 @@ export default function SignupScreen() {
           <TextInput
             style={styles.input}
             placeholder="Confirm Password"
-            value={confirmPassword}
-            onChangeText={setConfirmPassword}
+            value={formData.confirmPassword}
+            onChangeText={(text) =>
+              setFormData({ ...formData, confirmPassword: text })
+            }
             secureTextEntry
             placeholderTextColor="#6b7280"
           />
 
           <TextInput
             style={styles.input}
-            placeholder="age"
-            value={age}
-            onChangeText={setConfirmAge}
-            secureTextEntry
+            placeholder="Age"
+            value={formData.age}
+            onChangeText={(text) => setFormData({ ...formData, age: text })}
+            keyboardType="numeric"
             placeholderTextColor="#6b7280"
           />
 
           <TouchableOpacity
-            style={styles.signupButton}
+            style={[
+              styles.signupButton,
+              loading && styles.signupButtonDisabled,
+            ]}
             onPress={handleSignup}
             disabled={loading}
           >
@@ -141,27 +161,50 @@ export default function SignupScreen() {
             </TouchableOpacity>
           </View>
 
-          <View style={styles.signupContainer}>
-            <Text style={styles.signupText}>Already have an account? </Text>
+          <View style={styles.loginContainer}>
+            <Text style={styles.loginText}>Already have an account? </Text>
             <Link href="/login" asChild>
               <TouchableOpacity>
-                <Text style={styles.signupLink}>Login</Text>
+                <Text style={styles.loginLink}>Login</Text>
               </TouchableOpacity>
             </Link>
           </View>
         </View>
-      </View>
-    </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  content: { flex: 1, paddingHorizontal: 24, paddingTop: 60 },
-  header: { alignItems: 'center', marginBottom: 48 },
-  logo: { width: 120, height: 50, resizeMode: 'contain', marginBottom: 16 },
-  welcomeText: { fontSize: 18, color: '#374151', textAlign: 'center' },
-  form: { gap: 16 },
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  content: {
+    flex: 1,
+    padding: 24,
+  },
+  header: {
+    alignItems: 'center',
+    marginTop: 60,
+    marginBottom: 48,
+  },
+  logo: {
+    width: 100,
+    height: 40,
+    resizeMode: 'contain',
+  },
+  logoHighlight: {
+    color: '#6366f1',
+  },
+  welcomeText: {
+    fontSize: 18,
+    color: '#374151',
+    textAlign: 'center',
+  },
+  form: {
+    gap: 16,
+  },
   input: {
     height: 52,
     borderWidth: 1,
@@ -179,16 +222,34 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  signupButtonText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  signupButtonDisabled: {
+    backgroundColor: '#a5a6f6',
+  },
+  signupButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
     marginVertical: 24,
     gap: 8,
   },
-  dividerLine: { flex: 1, height: 1, backgroundColor: '#e5e7eb' },
-  dividerText: { color: '#6b7280', fontSize: 14 },
-  socialButtons: { flexDirection: 'row', justifyContent: 'center', gap: 16 },
+  dividerLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: '#e5e7eb',
+  },
+  dividerText: {
+    color: '#6b7280',
+    fontSize: 14,
+  },
+  socialButtons: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 16,
+  },
   socialButton: {
     width: 52,
     height: 52,
@@ -197,11 +258,18 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  signupContainer: {
+  loginContainer: {
     flexDirection: 'row',
     justifyContent: 'center',
     marginTop: 24,
   },
-  signupText: { color: '#6b7280', fontSize: 14 },
-  signupLink: { color: '#6366f1', fontSize: 14, fontWeight: '500' },
+  loginText: {
+    color: '#6b7280',
+    fontSize: 14,
+  },
+  loginLink: {
+    color: '#6366f1',
+    fontSize: 14,
+    fontWeight: '500',
+  },
 });

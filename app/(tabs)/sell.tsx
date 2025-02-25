@@ -12,18 +12,14 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 import { addProduct } from '../service/service';
-import Product from '../entities/product';
-import { jwtDecode } from 'jwt-decode';
-import { Platform } from 'react-native';
+import { useAuth } from '../context/AuthContext'; // ✅ Import useAuth hook
 
 type ProductType = 'ticket' | 'gift-card' | 'subscription';
-interface DecodedToken {
-  id: string;
-  role: string;
-  iat: number; // Issued at timestamp
-}
+
 export default function SellScreen() {
   const router = useRouter();
+  const { user } = useAuth(); // ✅ Use hook at the top level
+
   const [selectedType, setSelectedType] = useState<ProductType | null>(null);
   const [formData, setFormData] = useState({
     title: '',
@@ -50,13 +46,13 @@ export default function SellScreen() {
       id: 'gaming_account' as ProductType,
       title: 'Gaming accounts',
       icon: 'game-controller',
-      description: 'Valorant, Fortniet, CS2, etc.',
+      description: 'Valorant, Fortnite, CS2, etc.',
     },
     {
       id: 'social_media_account' as ProductType,
-      title: 'social media account',
+      title: 'Social Media Accounts',
       icon: 'people',
-      description: 'facebook, instagram, tiktok, etc.',
+      description: 'Facebook, Instagram, TikTok, etc.',
     },
     {
       id: 'document' as ProductType,
@@ -67,6 +63,11 @@ export default function SellScreen() {
   ];
 
   const handleSubmit = async () => {
+    if (!user) {
+      alert('Authentication error: Please log in again.');
+      return;
+    }
+
     if (
       !selectedType ||
       !formData.title ||
@@ -76,39 +77,9 @@ export default function SellScreen() {
       alert('Please fill in all fields.');
       return;
     }
-    const getToken = async () => {
-      if (Platform.OS === 'web') {
-        return localStorage.getItem('authToken');
-      } else {
-        return await SecureStore.getItemAsync('authToken');
-      }
-    };
-    const getTokenData = (): DecodedToken | null => {
-      try {
-        const token = getToken();
-        if (!token) {
-          console.log('No token found');
-          return null;
-        }
-
-        const decoded: DecodedToken = jwtDecode<DecodedToken>(token);
-        console.log('Decoded Token:', decoded);
-
-        return decoded; // You can use this data (e.g., userId, email, etc.)
-      } catch (error) {
-        console.error('Error retrieving or decoding token:', error);
-        return null;
-      }
-    };
-    const decodedToken = getTokenData();
-    if (decodedToken) {
-      console.log('User ID:', decodedToken.id);
-    }
-
-    const hardcodedUserId = decodedToken.id; // Replace with actual user ID
 
     const newProduct = {
-      sellerId: hardcodedUserId,
+      sellerId: user._id, // ✅ Get user ID correctly
       type: selectedType,
       title: formData.title,
       description: formData.description,

@@ -5,68 +5,34 @@ import {
   TextInput,
   TouchableOpacity,
   StyleSheet,
-  Image,
   Alert,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Link, useRouter } from 'expo-router';
-import { loginUser } from '../app/service/service';
-import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
+import { useAuth } from './context/AuthContext';
 
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  const router = useRouter(); // Use router for navigation
+  const [isLoading, setIsLoading] = useState(false);
+  const { signIn } = useAuth();
+  const router = useRouter();
 
   const handleLogin = async () => {
     if (!email || !password) {
-      Alert.alert('Error', 'Please enter both email and password.');
+      Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    setLoading(true);
+    setIsLoading(true);
     try {
-      const { token, user } = await loginUser(email, password);
-      console.log('Extracted Token :', token);
-
-      const saveToken = async (token: string) => {
-        if (Platform.OS === 'web') {
-          localStorage.setItem('authToken', token); // ✅ Use localStorage for web
-        } else {
-          await SecureStore.setItemAsync('authToken', token); // ✅ Use SecureStore for mobile
-        }
-      };
-
-      const getToken = async () => {
-        if (Platform.OS === 'web') {
-          return localStorage.getItem('authToken');
-        } else {
-          return await SecureStore.getItemAsync('authToken');
-        }
-      };
-
-      if (token) {
-        console.log('Extracted Token:', token);
-
-        await saveToken(token);
-
-        const storedToken = await getToken();
-
-        console.log('Stored Token:', storedToken);
-
-        if (!storedToken) {
-          console.error('Failed to store token.');
-        } else {
-          Alert.alert('Success', 'Login successful!');
-          router.replace('/');
-        }
-      }
+      await signIn(email, password);
+      router.replace('/(tabs)');
     } catch (error: any) {
-      Alert.alert('Login Failed', error.message);
+      Alert.alert('Error', error.message || 'Failed to login');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -79,7 +45,7 @@ export default function LoginScreen() {
             style={styles.logo}
           />
           <Text style={styles.welcomeText}>
-            Welcome back, you've been missed!
+            Welcome back you've been missed!
           </Text>
         </View>
 
@@ -108,12 +74,15 @@ export default function LoginScreen() {
           </TouchableOpacity>
 
           <TouchableOpacity
-            style={[styles.loginButton, loading && styles.disabledButton]}
+            style={[
+              styles.loginButton,
+              isLoading && styles.loginButtonDisabled,
+            ]}
             onPress={handleLogin}
-            disabled={loading}
+            disabled={isLoading}
           >
             <Text style={styles.loginButtonText}>
-              {loading ? 'Logging in...' : 'Login'}
+              {isLoading ? 'Logging in...' : 'Login'}
             </Text>
           </TouchableOpacity>
 
@@ -164,10 +133,12 @@ const styles = StyleSheet.create({
     marginBottom: 48,
   },
   logo: {
-    width: 120,
-    height: 50,
+    width: 100,
+    height: 40,
     resizeMode: 'contain',
-    marginBottom: 16,
+  },
+  logoHighlight: {
+    color: '#6366f1',
   },
   welcomeText: {
     fontSize: 18,
@@ -202,8 +173,8 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: 8,
   },
-  disabledButton: {
-    backgroundColor: '#9ca3af',
+  loginButtonDisabled: {
+    backgroundColor: '#a5a6f6',
   },
   loginButtonText: {
     color: '#fff',
