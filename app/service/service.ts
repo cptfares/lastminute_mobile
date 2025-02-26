@@ -1,11 +1,11 @@
 import { RegisterUser } from './../entities/user';
 import axios from "axios";
 import {User} from "../entities/user"
-import { Product } from "app/entities/product";
-import { Transaction } from "app/entities/transaction";
+import { Product } from "../entities/product";
+import { Transaction } from "../entities/transaction";
 
 const api = axios.create({
-  baseURL: "http://192.168.16.241:6005/api",
+  baseURL: "http://192.168.1.11:6005/api",
   headers: {
     "Content-Type": "application/json",
   },

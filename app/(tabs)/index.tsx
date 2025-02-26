@@ -5,11 +5,13 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 import { AuthProvider } from '../context/AuthContext';
+import React from 'react';
 
 function CategoryCard({
   icon,
@@ -29,7 +31,59 @@ function CategoryCard({
     </TouchableOpacity>
   );
 }
-
+const recommendedProducts = [
+  {
+    id: '1',
+    title: 'UFC 300 VIP Experience',
+    price: '$999.99',
+    image:
+      'https://images.unsplash.com/photo-1579882392185-ea7c6fd3a92a?w=800&auto=format&fit=crop&q=60',
+  },
+  {
+    id: '2',
+    title: 'PlayStation Plus 12-Month Subscription',
+    price: '$59.99',
+    image:
+      'https://images.unsplash.com/photo-1592155931584-901ac15763e3?w=800&auto=format&fit=crop&q=60',
+  },
+  {
+    id: '3',
+    title: 'Coachella 2025 Weekend Pass',
+    price: '$499.99',
+    image:
+      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60',
+  },
+  {
+    id: '4',
+    title: 'Netflix Premium Annual Gift Card',
+    price: '$215.88',
+    image:
+      'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=800&auto=format&fit=crop&q=60',
+  },
+];
+function ProductCard({
+  image,
+  title,
+  price,
+  onPress,
+}: {
+  image: string;
+  title: string;
+  price: string;
+  onPress: () => void;
+}) {
+  return (
+    <TouchableOpacity style={styles.productCard} onPress={onPress}>
+      <Image source={{ uri: image }} style={styles.productImage} />
+      <View style={styles.productInfo}>
+        <Text style={styles.productTitle} numberOfLines={2}>
+          {title}
+        </Text>
+        <Text style={styles.productPrice}>{price}</Text>
+      </View>
+    </TouchableOpacity>
+  );
+}
 export default function HomeScreen() {
   const router = useRouter();
 
@@ -147,6 +201,31 @@ export default function HomeScreen() {
               </View>
             </TouchableOpacity>
           </View>
+          <View style={styles.recommendedSection}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>For You</Text>
+              <TouchableOpacity>
+                <Text style={styles.viewAllText}>View all</Text>
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              style={styles.recommendedScroll}
+              contentContainerStyle={styles.recommendedContent}
+            >
+              {recommendedProducts.map((product) => (
+                <ProductCard
+                  key={product.id}
+                  image={product.image}
+                  title={product.title}
+                  price={product.price}
+                  onPress={() => router.push(`/product/${product.id}`)}
+                />
+              ))}
+            </ScrollView>
+          </View>
         </ScrollView>
       </View>
     </AuthProvider>
@@ -253,5 +332,40 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     opacity: 0.9,
+  },
+  recommendedSection: {
+    marginBottom: 24,
+  },
+  recommendedScroll: {
+    marginHorizontal: -16,
+  },
+  recommendedContent: {
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  productCard: {
+    width: 200,
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    overflow: 'hidden',
+  },
+  productImage: {
+    width: '100%',
+    height: 150,
+    backgroundColor: '#f3f4f6',
+  },
+  productInfo: {
+    padding: 12,
+  },
+  productTitle: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 4,
+    height: 40,
+  },
+  productPrice: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#6366f1',
   },
 });

@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 import { addProduct } from '../service/service';
-import { useAuth } from '../context/AuthContext'; // ✅ Import useAuth hook
+import { useAuth } from '../context/AuthContext';
 
 type ProductType = 'ticket' | 'gift-card' | 'subscription';
 
@@ -101,7 +101,11 @@ export default function SellScreen() {
         description: '',
         quantity: '1',
       });
-      router.push('/');
+
+      router.push({
+        pathname: '/product-share',
+        params: { id: newProduct.sellerId },
+      });
     } catch (error) {
       console.error('Error adding product:', error);
     }
