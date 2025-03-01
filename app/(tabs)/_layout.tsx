@@ -1,120 +1,166 @@
-import { useEffect, useState } from 'react';
-import { Tabs, Redirect } from 'expo-router';
+import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useAuth } from '../context/AuthContext';
-import { AuthProvider } from '../context/AuthContext';
+import { View, StyleSheet, Text } from 'react-native';
+import { BlurView } from 'expo-blur';
 
-import AsyncStorage from '@react-native-async-storage/async-storage';
+// Custom tab bar icon component for the sell button
+function SellButton() {
+  return (
+    <View style={styles.sellButtonContainer}>
+      <View style={styles.sellButton}>
+        <Ionicons name="add" size={24} color="#fff" />
+      </View>
+    </View>
+  );
+}
 
 export default function TabLayout() {
-  const { user, isLoading } = useAuth();
-  const [isFirstLaunch, setIsFirstLaunch] = useState<boolean | null>(null);
-
-  useEffect(() => {
-    checkFirstLaunch();
-  }, []);
-
-  const checkFirstLaunch = async () => {
-    try {
-      const hasLaunched = await AsyncStorage.getItem('hasLaunched');
-      if (hasLaunched === null) {
-        await AsyncStorage.setItem('hasLaunched', 'true');
-        setIsFirstLaunch(true);
-      } else {
-        setIsFirstLaunch(false);
-      }
-    } catch (err) {
-      setIsFirstLaunch(false);
-    }
-  };
-
-  if (isFirstLaunch === null || isLoading) return null; // Show nothing while checking
-
-  if (isFirstLaunch) return <Redirect href="/onboarding" />;
-  if (!user) return <Redirect href="/login" />;
-
   return (
-    <AuthProvider>
-      <Tabs
-        screenOptions={{
-          tabBarStyle: {
-            backgroundColor: '#ffffff',
-            borderTopWidth: 1,
-            borderTopColor: '#e5e5e5',
-            height: 60,
-            paddingBottom: 8,
-          },
-          tabBarActiveTintColor: '#6366f1',
-          tabBarInactiveTintColor: '#9ca3af',
-          headerShown: false,
+    <Tabs
+      screenOptions={{
+        tabBarStyle: {
+          backgroundColor: '#ffffff',
+          borderTopWidth: 0,
+          elevation: 0,
+          shadowOpacity: 0,
+          height: 60,
+          paddingBottom: 8,
+        },
+        tabBarActiveTintColor: '#6366f1',
+        tabBarInactiveTintColor: '#9ca3af',
+        headerShown: false,
+        tabBarShowLabel: true,
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '500',
+        },
+      }}
+    >
+      <Tabs.Screen
+        name="index"
+        options={{
+          title: 'Home',
+          tabBarIcon: ({ focused, color, size }) => (
+            <View style={styles.tabIconContainer}>
+              <Ionicons
+                name={focused ? 'compass' : 'compass-outline'}
+                size={size}
+                color={color}
+              />
+              {focused && <View style={styles.activeIndicator} />}
+            </View>
+          ),
         }}
-      >
-        <Tabs.Screen
-          name="index"
-          options={{
-            title: 'Home',
-            tabBarIcon: ({ focused, color, size }) => (
+      />
+      <Tabs.Screen
+        name="orders"
+        options={{
+          title: 'Orders',
+          tabBarIcon: ({ focused, color, size }) => (
+            <View style={styles.tabIconContainer}>
               <Ionicons
-                name={focused ? 'home' : 'home-outline'}
+                name={focused ? 'receipt' : 'receipt-outline'}
                 size={size}
                 color={color}
               />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="orders"
-          options={{
-            title: 'Orders',
-            tabBarIcon: ({ focused, color, size }) => (
-              <Ionicons
-                name={focused ? 'cart' : 'cart-outline'}
-                size={size}
-                color={color}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="sell"
-          options={{
-            title: 'Sell',
-            tabBarIcon: ({ focused, color, size }) => (
-              <Ionicons
-                name={focused ? 'camera' : 'camera-outline'}
-                size={size}
-                color={color}
-              />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="wallet"
-          options={{
-            title: 'Wallet',
-            tabBarIcon: ({ focused, color, size }) => (
+              {focused && <View style={styles.activeIndicator} />}
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="sell"
+        options={{
+          title: 'Sell',
+          tabBarIcon: ({ focused }) => <SellButton />,
+          tabBarLabel: ({ focused }) => (
+            <Text
+              style={[styles.sellLabel, focused ? styles.sellLabelActive : {}]}
+            >
+              Sell
+            </Text>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="wallet"
+        options={{
+          title: 'Wallet',
+          tabBarIcon: ({ focused, color, size }) => (
+            <View style={styles.tabIconContainer}>
               <Ionicons
                 name={focused ? 'wallet' : 'wallet-outline'}
                 size={size}
                 color={color}
               />
-            ),
-          }}
-        />
-        <Tabs.Screen
-          name="profile"
-          options={{
-            title: 'Profile',
-            tabBarIcon: ({ focused, color, size }) => (
+              {focused && <View style={styles.activeIndicator} />}
+            </View>
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="profile"
+        options={{
+          title: 'Profile',
+          tabBarIcon: ({ focused, color, size }) => (
+            <View style={styles.tabIconContainer}>
               <Ionicons
-                name={focused ? 'person' : 'person-outline'}
+                name={focused ? 'person-circle' : 'person-circle-outline'}
                 size={size}
                 color={color}
               />
-            ),
-          }}
-        />
-      </Tabs>
-    </AuthProvider>
+              {focused && <View style={styles.activeIndicator} />}
+            </View>
+          ),
+        }}
+      />
+    </Tabs>
   );
 }
+
+const styles = StyleSheet.create({
+  tabIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    paddingTop: 8,
+  },
+  activeIndicator: {
+    position: 'absolute',
+    bottom: -8,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: '#6366f1',
+  },
+  sellButtonContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    top: -15,
+  },
+  sellButton: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: '#6366f1',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#6366f1',
+    shadowOffset: {
+      width: 0,
+      height: 4,
+    },
+    shadowOpacity: 0.3,
+    shadowRadius: 4.65,
+    elevation: 8,
+  },
+  sellLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    color: '#9ca3af',
+    marginTop: 10,
+  },
+  sellLabelActive: {
+    color: '#6366f1',
+  },
+});

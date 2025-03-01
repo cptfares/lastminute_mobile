@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { AuthProvider } from './context/AuthContext';
+import { ToastProvider } from './context/ToastContext';
 import { View } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Redirect } from 'expo-router';
@@ -35,34 +36,36 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
-      <View style={{ flex: 1 }}>
-        {isFirstLaunch ? (
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="onboarding" />
-          </Stack>
-        ) : (
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="login" />
-            <Stack.Screen name="signup" />
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="chat" options={{ presentation: 'modal' }} />
-            <Stack.Screen
-              name="edit-profile"
-              options={{ presentation: 'card' }}
-            />
-            <Stack.Screen name="search" />
-            <Stack.Screen name="product/[id]" />
-            <Stack.Screen name="cart" />
-            <Stack.Screen name="checkout" />
-            <Stack.Screen
-              name="order-success"
-              options={{ presentation: 'modal' }}
-            />
-            <Stack.Screen name="order/[id]" />
-          </Stack>
-        )}
-        <StatusBar style="auto" />
-      </View>
+      <ToastProvider>
+        <View style={{ flex: 1 }}>
+          {isFirstLaunch ? (
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="onboarding" />
+            </Stack>
+          ) : (
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="login" />
+              <Stack.Screen name="signup" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="chat" options={{ presentation: 'modal' }} />
+              <Stack.Screen
+                name="edit-profile"
+                options={{ presentation: 'card' }}
+              />
+              <Stack.Screen name="search" />
+              <Stack.Screen name="product/[id]" />
+              <Stack.Screen name="cart" />
+              <Stack.Screen name="checkout" />
+              <Stack.Screen
+                name="order-success"
+                options={{ presentation: 'modal' }}
+              />
+              <Stack.Screen name="order/[id]" />
+            </Stack>
+          )}
+          <StatusBar style="auto" />
+        </View>
+      </ToastProvider>
     </AuthProvider>
   );
 }

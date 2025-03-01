@@ -13,13 +13,13 @@ import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 import { addProduct } from '../service/service';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 type ProductType = 'ticket' | 'gift-card' | 'subscription';
 
 export default function SellScreen() {
   const router = useRouter();
-  const { user } = useAuth(); // ✅ Use hook at the top level
-
+  const { user } = useAuth();
   const [selectedType, setSelectedType] = useState<ProductType | null>(null);
   const [formData, setFormData] = useState({
     title: '',

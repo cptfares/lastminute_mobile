@@ -11,12 +11,14 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
+import { useToast } from './context/ToastContext';
 
 export default function ProductShareScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams();
   const [copyAnimation] = useState(new Animated.Value(0));
   const [showCopied, setShowCopied] = useState(false);
+  const { showToast } = useToast();
 
   const productLink = `https://lastmin.app/product/${id}`;
 
@@ -26,13 +28,16 @@ export default function ProductShareScreen() {
         message: `Check out this product on LastMin: ${productLink}`,
         url: productLink, // iOS only
       });
+      showToast('Link shared successfully!', 'success');
     } catch (error) {
       console.error('Error sharing:', error);
+      showToast('Failed to share link', 'error');
     }
   };
 
   const handleCopy = async () => {
     await Clipboard.setStringAsync(productLink);
+    showToast('Link copied to clipboard!', 'success');
     setShowCopied(true);
     Animated.sequence([
       Animated.timing(copyAnimation, {
@@ -108,6 +113,7 @@ export default function ProductShareScreen() {
                   `Check out this product on LastMin: ${productLink}`
                 )}`;
                 router.push(url);
+                showToast('Opening WhatsApp...', 'info');
               }}
             >
               <Ionicons name="logo-whatsapp" size={24} color="#fff" />
@@ -120,7 +126,10 @@ export default function ProductShareScreen() {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.doneButton}
-          onPress={() => router.push('/(tabs)')}
+          onPress={() => {
+            router.push('/(tabs)');
+            showToast('Product listing completed!', 'success');
+          }}
         >
           <Text style={styles.doneButtonText}>Done</Text>
         </TouchableOpacity>

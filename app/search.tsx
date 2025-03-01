@@ -30,9 +30,9 @@ export default function SearchScreen() {
       try {
         const response = await getAllProducts();
         // Check if the response contains an array of products.
-        if (Array.isArray(response.products)) {
-          setProducts(response.products); // Update products with the correct array
-          setFilteredProducts(response.products); // Same for filtered products
+        if (Array.isArray(response)) {
+          setProducts(response); // Update products with the correct array
+          setFilteredProducts(response); // Same for filtered products
         } else {
           console.error('API did not return a valid products array');
         }
