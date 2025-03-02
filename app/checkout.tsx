@@ -7,17 +7,55 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useLocalSearchParams } from 'expo-router';
+import { createPurchase, updateProduct } from './service/service';
+import { useAuth } from './context/AuthContext';
+import { useToast } from './context/ToastContext';
 
 type PaymentMethod = 'card' | 'crypto' | null;
 
 export default function CheckoutScreen() {
   const router = useRouter();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
+  const { user, signOut } = useAuth();
+  const [error, setError] = useState<string | null>(null);
+  const { showToast } = useToast();
+  const params = useLocalSearchParams();
+
+  const item = {
+    id: params.id,
+    name: params.title || 'Product',
+    price: parseFloat(params.price) || 0,
+    sellerId: params.sellerId,
+  };
 
   const handlePlaceOrder = () => {
-    if (paymentMethod) {
+    if (!paymentMethod) {
+      showToast('Warning: Pick a payment method.', 'warning');
+      return;
+    }
+
+    try {
+      // Create transaction
+      const transaction = createPurchase({
+        buyerId: user._id,
+        sellerId: item.sellerId,
+        productId: item.id,
+        amount: item.price,
+        currency: 'LST',
+        status: 'completed',
+        paymentMethod: paymentMethod === 'card' ? 'credit_card' : 'crypto',
+        deliveryStatus: 'pending',
+      });
+
+      // Update product status to "sold"
+      updateProduct(item.id, { status: 'sold' });
+
+      // Navigate to success page
       router.push('/order-success');
+    } catch (error) {
+      console.error('Order placement failed:', error);
+      showToast('error please try again ', 'warning');
     }
   };
 
@@ -35,14 +73,6 @@ export default function CheckoutScreen() {
       </View>
 
       <ScrollView style={styles.content}>
-        <TouchableOpacity style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Shipping Address</Text>
-            <Ionicons name="chevron-forward" size={20} color="#6b7280" />
-          </View>
-          <Text style={styles.sectionText}>Add Shipping Address</Text>
-        </TouchableOpacity>
-
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>Payment Method</Text>
 
@@ -88,9 +118,7 @@ export default function CheckoutScreen() {
             </View>
             <View style={styles.paymentOptionContent}>
               <Text style={styles.paymentOptionTitle}>Cryptocurrency</Text>
-              <Text style={styles.paymentOptionDescription}>
-                Pay with BTC, ETH, etc.
-              </Text>
+              <Text style={styles.paymentOptionDescription}>Pay with LST</Text>
             </View>
             <View
               style={[
@@ -110,19 +138,19 @@ export default function CheckoutScreen() {
         <View style={styles.summary}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>$110.00</Text>
+            <Text style={styles.summaryValue}>LST {item.price} </Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Shipping Cost</Text>
-            <Text style={styles.summaryValue}>$8.00</Text>
+            <Text style={styles.summaryValue}>LST 0.00</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax</Text>
-            <Text style={styles.summaryValue}>$0.00</Text>
+            <Text style={styles.summaryValue}>LST0.00</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>$118.00</Text>
+            <Text style={styles.totalValue}>LST {item.price}</Text>
           </View>
         </View>
       </ScrollView>
@@ -136,7 +164,7 @@ export default function CheckoutScreen() {
           onPress={handlePlaceOrder}
           disabled={!paymentMethod}
         >
-          <Text style={styles.placeOrderButtonText}>$118.00</Text>
+          <Text style={styles.placeOrderButtonText}>LST {item.price}</Text>
           <Text style={styles.placeOrderButtonText}>Place Order</Text>
         </TouchableOpacity>
       </View>

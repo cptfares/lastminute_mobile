@@ -8,21 +8,23 @@ import {
   TextInput,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 
 export default function CartScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams();
+  console.log(params);
   const item = {
-    name: 'Coachella Weekend Pass',
-    price: 110.0,
-    image:
-      'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60',
-    quantity: 1,
+    id: params.id,
+    name: params.title || 'Product',
+    price: parseFloat(params.price) || 0,
+    image: params.image || '',
+    sellerId: params.sellerId,
   };
 
-  const shippingCost = 8.0;
+  const shippingCost = 0.0;
   const tax = 0.0;
-  const total = item.price * item.quantity + shippingCost + tax;
+  const total = item.price + shippingCost + tax;
 
   return (
     <View style={styles.container}>
@@ -46,7 +48,7 @@ export default function CartScreen() {
             <Text style={styles.itemName}>{item.name}</Text>
             <Text style={styles.itemPrice}>${item.price.toFixed(2)}</Text>
             <View style={styles.quantityContainer}>
-              <Text>Quantity: {item.quantity}</Text>
+              <Text>Quantity: 1</Text>
               <View style={styles.quantityControls}>
                 <TouchableOpacity style={styles.quantityButton}>
                   <Ionicons name="remove" size={20} color="#6366f1" />
@@ -62,19 +64,21 @@ export default function CartScreen() {
         <View style={styles.summary}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>${item.price.toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>LST{item.price.toFixed(2)}</Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Shipping Cost</Text>
-            <Text style={styles.summaryValue}>${shippingCost.toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>
+              LST{shippingCost.toFixed(2)}
+            </Text>
           </View>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Tax</Text>
-            <Text style={styles.summaryValue}>${tax.toFixed(2)}</Text>
+            <Text style={styles.summaryValue}>LST{tax.toFixed(2)}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
-            <Text style={styles.totalValue}>${total.toFixed(2)}</Text>
+            <Text style={styles.totalValue}>LST{total.toFixed(2)}</Text>
           </View>
         </View>
 
@@ -93,7 +97,16 @@ export default function CartScreen() {
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.checkoutButton}
-          onPress={() => router.push('/checkout')}
+          onPress={() =>
+            router.push({
+              pathname: '/checkout',
+              params: {
+                id: item.id,
+                price: item.price,
+                sellerId: item.sellerId,
+              },
+            })
+          }
         >
           <Text style={styles.checkoutButtonText}>Checkout</Text>
         </TouchableOpacity>

@@ -5,7 +5,7 @@ import { Product } from "../entities/product";
 import { Transaction } from "../entities/transaction";
 
 const api = axios.create({
-  baseURL: "http://192.168.1.13:6005/api",
+  baseURL: "http://192.168.162.21:6005/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -206,3 +206,135 @@ export const getPurchaseIdByUserAndProduct = async (
     throw error;
   }
 };
+// Fetch product by ID
+export const getProductById = async (id: string): Promise<Product | null> => {
+  try {
+    // In a real app, this would fetch a specific product by ID from your API
+    const product = mockProducts.find(p => p._id === id);
+    return product || null;
+  } catch (error) {
+    console.error('Error fetching product by ID:', error);
+    throw error;
+  }
+};
+
+// Mock data for development
+const mockProducts: Product[] = [
+  {
+    _id: '1',
+    title: 'UFC 300 VIP Experience Digital Pass',
+    price: 999.99,
+    currency: 'USD',
+    images: ['https://images.unsplash.com/photo-1579882392185-ea7c6fd3a92a?w=800&auto=format&fit=crop&q=60'],
+    sellerId: 'user1',
+    type: 'concert_ticket',
+    description: 'VIP experience for UFC 300. Includes digital access to exclusive content, pre-fight interviews, and behind-the-scenes footage.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: 'available',
+    metadata: {
+      concertTicket: {
+        eventName: 'UFC 300',
+        eventDate: '2025-04-15T19:00:00Z',
+        seat: 'Digital Access'
+      }
+    }
+  },
+  {
+    _id: '2',
+    title: 'PlayStation Plus 12-Month Subscription',
+    price: 59.99,
+    currency: 'USD',
+    images: ['https://images.unsplash.com/photo-1592155931584-901ac15763e3?w=800&auto=format&fit=crop&q=60'],
+    sellerId: 'user2',
+    type: 'gaming_account',
+    description: '12-month PlayStation Plus subscription. Get access to free monthly games, exclusive discounts, and online multiplayer.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: 'available',
+    metadata: {
+      gamingAccount: {
+        platform: 'PlayStation',
+        game: 'PlayStation Plus'
+      }
+    }
+  },
+  {
+    _id: '3',
+    title: 'Coachella 2025 Weekend Pass',
+    price: 499.99,
+    currency: 'USD',
+    images: ['https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60'],
+    sellerId: 'user3',
+    type: 'concert_ticket',
+    description: 'Weekend pass for Coachella 2025. Experience the world\'s most famous music festival with this digital pass.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: 'available',
+    metadata: {
+      concertTicket: {
+        eventName: 'Coachella 2025',
+        eventDate: '2025-04-11T12:00:00Z',
+        seat: 'General Admission'
+      }
+    }
+  },
+  {
+    _id: '4',
+    title: 'Netflix Premium Annual Gift Card',
+    price: 215.88,
+    currency: 'USD',
+    images: ['https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=800&auto=format&fit=crop&q=60'],
+    sellerId: 'user4',
+    type: 'social_media_account',
+    description: 'Annual Netflix Premium subscription gift card. Enjoy a year of unlimited streaming in 4K UHD.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: 'available',
+    metadata: {
+      socialMediaAccount: {
+        platform: 'Netflix',
+        followers: 0
+      }
+    }
+  },
+  {
+    _id: '5',
+    title: 'Tomorrowland 2025 Digital Festival Pass',
+    price: 349.99,
+    currency: 'USD',
+    images: ['https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop&q=60'],
+    sellerId: 'user5',
+    type: 'concert_ticket',
+    description: 'Digital pass for Tomorrowland 2025. Experience the world\'s premier electronic music festival.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: 'available',
+    metadata: {
+      concertTicket: {
+        eventName: 'Tomorrowland 2025',
+        eventDate: '2025-07-18T14:00:00Z',
+        seat: 'Digital Access'
+      }
+    }
+  },
+  {
+    _id: '6',
+    title: 'Xbox Game Pass Ultimate 6-Month Code',
+    price: 89.99,
+    currency: 'USD',
+    images: ['https://images.unsplash.com/photo-1603190287605-e6ade32fa852?w=800&auto=format&fit=crop&q=60'],
+    sellerId: 'user6',
+    type: 'gaming_account',
+    description: '6-month Xbox Game Pass Ultimate subscription. Get access to hundreds of high-quality games on Xbox and PC.',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    status: 'available',
+    metadata: {
+      gamingAccount: {
+        platform: 'Xbox',
+        game: 'Game Pass Ultimate'
+      }
+    }
+  },
+];

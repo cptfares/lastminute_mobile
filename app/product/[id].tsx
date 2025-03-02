@@ -70,43 +70,31 @@ export default function ProductScreen() {
           <Text style={styles.productPrice}>
             {product.currency} {product.price.toFixed(2)}
           </Text>
-          <View style={styles.quantityContainer}>
-            <Text style={styles.quantityLabel}>Quantity</Text>
-            <View style={styles.quantityControls}>
-              <TouchableOpacity
-                onPress={decrementQuantity}
-                style={[
-                  styles.quantityButton,
-                  quantity === 1 && styles.quantityButtonDisabled,
-                ]}
-              >
-                <Ionicons
-                  name="remove"
-                  size={20}
-                  color={quantity === 1 ? '#9ca3af' : '#fff'}
-                />
-              </TouchableOpacity>
-              <Text style={styles.quantityText}>{quantity}</Text>
-              <TouchableOpacity
-                onPress={incrementQuantity}
-                style={styles.quantityButton}
-              >
-                <Ionicons name="add" size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
-          </View>
+
+          <Text>{product.description}</Text>
         </View>
       </View>
 
       <View style={styles.footer}>
         <TouchableOpacity
           style={styles.addToCartButton}
-          onPress={() => router.push('/cart')}
+          onPress={() =>
+            router.push({
+              pathname: '/cart',
+              params: {
+                id: product._id,
+                title: product.title,
+                price: product.price,
+                image: product.images[0],
+                sellerId: product.sellerId,
+              },
+            })
+          }
         >
           <Text style={styles.addToCartPrice}>
             {product.currency} {total.toFixed(2)}
           </Text>
-          <Text style={styles.addToCartText}>Add to Bag</Text>
+          <Text style={styles.addToCartText}>Check out</Text>
         </TouchableOpacity>
       </View>
     </View>
