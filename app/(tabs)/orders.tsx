@@ -10,49 +10,101 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { useToast } from '../context/ToastContext';
-import { getProductById } from '../service/service';
+import { getProductById, getPurchasesByUser } from '../service/service';
 import Product from '../entities/product';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
 import Header from '../../components/Header';
+import { useAuth } from '../context/AuthContext';
+import { jwtDecode } from 'jwt-decode';
+import { Transaction } from '../entities/transactions';
 
 export default function OrdersScreen() {
   const { showToast } = useToast();
-  const [product, setProduct] = useState<Product | null>(null);
+
+    const [transactions, setTransactions] = useState([]);
+    const [selectedTransaction, setSelectedTransaction] = useState(null);
+
+
+  
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [viewingOrderDetails, setViewingOrderDetails] = useState(false);
+  const {token } = useAuth();
+  let decodedToken = null;
+  let userId = null;
+  
+  if (token) {
+    try {
+      decodedToken = jwtDecode(token);
+      console.log('Decoded Token:', decodedToken);
+  
+      userId = decodedToken?.userId || decodedToken?.id; //
+      console.log('User ID:', userId);
+    } catch (error) {
+      console.error('Error decoding token:', error);
+    }
+  } else {
+    console.warn('No token available to decode.');
+  }
+
+
+
+
+
+  const fetchTransactionsWithProducts = async (userId) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+  
+      // Fetch all transactions for the user
+      const fetchedTransactions = await getPurchasesByUser(userId);
+  
+      if (!fetchedTransactions || fetchedTransactions.length === 0) {
+        setTransactions([]); // No transactions found
+        return;
+      }
+  
+      // Fetch each product for the transactions
+      const updatedTransactions = await Promise.all(
+        fetchedTransactions.map(async (transaction) => {
+          try {
+            const product = await getProductById(transaction.productId);
+            return { ...transaction, product }; // Attach product to the transaction
+          } catch (productError) {
+            console.error(`Error fetching product ${transaction.productId}:`, productError);
+            return { ...transaction, product: null }; // If product fetching fails
+          }
+        })
+      );
+  
+      setTransactions(updatedTransactions);
+      console.log("Transactions with their products:", updatedTransactions);
+    } catch (err) {
+      console.error("Error fetching transactions:", err);
+      setError("Failed to fetch transactions. Please try again later.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
 
   useEffect(() => {
-    const fetchOrderDetails = async () => {
-      try {
-        setIsLoading(true);
-        // For demo purposes, we're fetching a specific product
-        // In a real app, you would fetch the user's orders
-        const productId = '1'; // Replace with actual order/product ID
-        const productData = await getProductById(productId);
+    
+  
+    if (userId) {
+      fetchTransactionsWithProducts(userId);
 
-        if (productData) {
-          setProduct(productData);
-        } else {
-          // Fallback to sample data if product not found
-          setProduct(sampleProduct);
-        }
-        setViewingOrderDetails(true);
-      } catch (err) {
-        console.error('Error fetching order details:', err);
-        setError('Failed to load order details. Please try again later.');
-        setProduct(sampleProduct); // Fallback to sample data
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    }
+  }, [userId]); // Runs when userId changes
+  
+  
+transactions.map((transaction) => (
+  console.log("the od"+transaction.product.product.title)
+))
 
-    fetchOrderDetails();
-  }, []);
 
-  // Sample product data as fallback
   const sampleProduct = {
     _id: '1',
     title: 'UFC 300 VIP Experience Digital Pass',
@@ -78,8 +130,7 @@ export default function OrdersScreen() {
   };
 
   const handleDownload = (contentType: string) => {
-    // In a real app, this would initiate a download or open a file
-    // For demo purposes, we'll just show a toast
+
     showToast(`Downloading ${contentType}...`, 'success');
 
     // Simulate download completion after 2 seconds
@@ -103,73 +154,79 @@ export default function OrdersScreen() {
     return `$${price.toFixed(2)}`;
   };
 
-  const getEventDate = () => {
-    if (product?.metadata?.concertTicket?.eventDate) {
-      return formatDate(product.metadata.concertTicket.eventDate);
+  const getEventDate = (transaction) => {
+    if (
+      transaction?.product.product &&
+      transaction.product.product.metadata &&
+      transaction.product.product.metadata.concertTicket &&
+      transaction.product.product.metadata.concertTicket.eventDate
+    ) {
+      return formatDate(transaction.product.product.metadata.concertTicket.eventDate);
     }
     return 'Date not specified';
   };
 
   const openSupport = () => {
     showToast('Opening support chat...', 'info');
-    // In a real app, this would open a support chat or email
   };
 
   const goBackToOrdersList = () => {
-    // In a real app, this would navigate back to the orders list
     setViewingOrderDetails(false);
     showToast('Returning to orders list', 'info');
-    // For demo purposes, we'll just simulate going back
-    // In a real app with multiple orders, you would navigate to the orders list
-    // router.back();
+
   };
 
   const renderOrdersList = () => {
     // This would be a list of orders in a real app
     // For demo purposes, we'll just show a single order that can be clicked
     return (
-      <view>
-        <Header />
+      <View>
+      <Header />
+    
+      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>My Orders</Text>
+        </View>
+    
+        {transactions?.length > 0 ? (
+transactions.map((transaction) => (
+  <TouchableOpacity
+              key={transaction._id}
+              style={styles.orderListItem}
 
-        <ScrollView
-          style={styles.container}
-          contentContainerStyle={styles.contentContainer}
-        >
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>My Orders</Text>
-          </View>
-
-          <TouchableOpacity
-            style={styles.orderListItem}
-            onPress={() => setViewingOrderDetails(true)}
-          >
-            <Image
-              source={{ uri: sampleProduct.images[0] }}
-              style={styles.orderListItemImage}
-            />
-            <View style={styles.orderListItemInfo}>
-              <Text style={styles.orderListItemTitle} numberOfLines={1}>
-                {sampleProduct.title}
-              </Text>
-              <Text style={styles.orderListItemPrice}>
-                {formatPrice(sampleProduct.price, sampleProduct.currency)}
-              </Text>
-              <View style={styles.orderListItemMeta}>
-                <Text style={styles.orderListItemDate}>
-                  Purchased on {formatDate(sampleProduct.createdAt)}
+              onPress={() =>{ setViewingOrderDetails(true);
+                setSelectedTransaction(transaction);
+              }
+              }
+            >
+              <Image source={{ uri: transaction.product.product.images[0] }} style={styles.orderListItemImage} />
+              <View style={styles.orderListItemInfo}>
+                <Text style={styles.orderListItemTitle} numberOfLines={1}>
+                  {transaction.product.product.title}
                 </Text>
-                <View style={styles.orderListItemStatus}>
-                  <View style={styles.statusDot} />
-                  <Text style={styles.statusText}>Completed</Text>
+                <Text style={styles.orderListItemPrice}>
+                  {formatPrice(transaction.product.product.price, transaction.product.product.currency)}
+                </Text>
+                <View style={styles.orderListItemMeta}>
+                  <Text style={styles.orderListItemDate}>
+                    Purchased on {formatDate(transaction.product.product.createdAt)}
+                  </Text>
+                  <View style={styles.orderListItemStatus}>
+                    <View style={styles.statusDot} />
+                    <Text style={styles.statusText}>{transaction.deliveryStatus}</Text>
+                  </View>
                 </View>
               </View>
-            </View>
-            <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-          </TouchableOpacity>
-        </ScrollView>
-      </view>
+              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
+            </TouchableOpacity>
+          ))
+        ) : (
+          <Text >No orders found</Text>
+        )}
+      </ScrollView>
+    </View>
+    
     );
-    W;
   };
 
   if (isLoading) {
@@ -223,33 +280,33 @@ export default function OrdersScreen() {
         </TouchableOpacity>
       </View>
 
-      {product && (
+      {selectedTransaction && (
         <>
           <View style={styles.orderCard}>
             <View style={styles.orderHeader}>
               <View style={styles.orderStatus}>
                 <View style={styles.statusDot} />
-                <Text style={styles.statusText}>Completed</Text>
+                <Text style={styles.statusText}>{selectedTransaction.deliveryStatus}</Text>
               </View>
               <Text style={styles.orderDate}>
-                Purchased on {formatDate(product.createdAt)}
+                Purchased on {formatDate(selectedTransaction.product.product.createdAt)}
               </Text>
             </View>
 
             <View style={styles.productContainer}>
               <Image
-                source={{ uri: product.images[0] }}
+                source={{ uri: selectedTransaction.product.product.images[0] }}
                 style={styles.productImage}
               />
               <View style={styles.productInfo}>
-                <Text style={styles.productTitle}>{product.title}</Text>
+                <Text style={styles.productTitle}>{selectedTransaction.product.product.title}</Text>
                 <Text style={styles.productPrice}>
-                  {formatPrice(product.price, product.currency)}
+                  {formatPrice(selectedTransaction.product.product.price, selectedTransaction.product.product.currency)}
                 </Text>
                 <View style={styles.orderIdContainer}>
                   <Text style={styles.orderIdLabel}>Order ID:</Text>
                   <Text style={styles.orderId}>
-                    ORD-{product._id}-{Date.now().toString().slice(-6)}
+                    ORD-{selectedTransaction.product.product._id}-{Date.now().toString().slice(-6)}
                   </Text>
                 </View>
               </View>
@@ -266,7 +323,7 @@ export default function OrdersScreen() {
                 </View>
                 <View style={styles.detailContent}>
                   <Text style={styles.detailLabel}>Event Date</Text>
-                  <Text style={styles.detailValue}>{getEventDate()}</Text>
+                  <Text style={styles.detailValue}>{getEventDate(selectedTransaction)}</Text>
                 </View>
               </View>
 
@@ -277,7 +334,7 @@ export default function OrdersScreen() {
                 <View style={styles.detailContent}>
                   <Text style={styles.detailLabel}>Access Type</Text>
                   <Text style={styles.detailValue}>
-                    {product.metadata?.concertTicket?.seat || 'Digital Access'}
+                    {selectedTransaction.product.product.metadata?.concertTicket || 'Digital Access'}
                   </Text>
                 </View>
               </View>

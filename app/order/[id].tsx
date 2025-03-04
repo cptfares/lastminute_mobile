@@ -10,45 +10,101 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { useToast } from '../context/ToastContext';
-import { getProductById } from '../service/service';
-import Product from '../entities/product';
+import { getProductById, getPurchasesByUser } from '../service/service';
+import {Product} from '../entities/product';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
+import { useAuth } from '../context/AuthContext';
+import  {jwtDecode} from 'jwt-decode';
+import { Transaction } from '../entities/transactions';
+
 
 export default function OrdersScreen() {
   const { showToast } = useToast();
   const [product, setProduct] = useState<Product | null>(null);
+  const [transction, settransaction] = useState<Transaction | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+
+  const {token } = useAuth();
+  let decodedToken = null;
+  let userId = null;
+  
+  if (token) {
+    try {
+      decodedToken = jwtDecode(token);
+      console.log('Decoded Token:', decodedToken);
+  
+      userId = decodedToken?.userId || decodedToken?.id; //
+      console.log('User ID:', userId);
+    } catch (error) {
+      console.error('Error decoding token:', error);
+    }
+  } else {
+    console.warn('No token available to decode.');
+  }
+
   useEffect(() => {
+    const fetchtransactiondetails=async (id)=>{
+try{
+      const TransactiontData = await getPurchasesByUser(id);
+
+      if (TransactiontData) {
+        settransaction(TransactiontData);
+      }
+    } catch (err) {
+      console.error('Error fetching order details:', err);
+      setError('Failed to load order details. Please try again later.');
+      setProduct(sampleProduct);
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+
+
+
+  
+
+
+
+
     const fetchOrderDetails = async () => {
       try {
-        setIsLoading(true);
-        // For demo purposes, we're fetching a specific product
-        // In a real app, you would fetch the user's orders
-        const productId = '1'; // Replace with actual order/product ID
+ 
+        const productId = '1'; 
         const productData = await getProductById(productId);
 
         if (productData) {
           setProduct(productData);
         } else {
-          // Fallback to sample data if product not found
           setProduct(sampleProduct);
         }
       } catch (err) {
         console.error('Error fetching order details:', err);
         setError('Failed to load order details. Please try again later.');
-        setProduct(sampleProduct); // Fallback to sample data
+        setProduct(sampleProduct);
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchOrderDetails();
-  }, []);
 
-  // Sample product data as fallback
+
+
+
+
+    fetchOrderDetails();
+    if (userId) {
+      fetchtransactiondetails(userId);
+    }    
+    console.log(    fetchtransactiondetails(userId)  )
+  }, []);
+ 
+  
+
   const sampleProduct = {
     _id: '1',
     title: 'UFC 300 VIP Experience Digital Pass',
@@ -74,11 +130,9 @@ export default function OrdersScreen() {
   };
 
   const handleDownload = (contentType: string) => {
-    // In a real app, this would initiate a download or open a file
-    // For demo purposes, we'll just show a toast
+
     showToast(`Downloading ${contentType}...`, 'success');
 
-    // Simulate download completion after 2 seconds
     setTimeout(() => {
       showToast(`${contentType} downloaded successfully!`, 'success');
     }, 2000);
@@ -108,7 +162,6 @@ export default function OrdersScreen() {
 
   const openSupport = () => {
     showToast('Opening support chat...', 'info');
-    // In a real app, this would open a support chat or email
   };
 
   if (isLoading) {
@@ -142,7 +195,8 @@ export default function OrdersScreen() {
       contentContainerStyle={styles.contentContainer}
     >
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>Order Details</Text>
+        <Text style={styles.headerTitle}>Order Details </Text>
+
         <TouchableOpacity onPress={openSupport}>
           <Ionicons
             name="chatbubble-ellipses-outline"
