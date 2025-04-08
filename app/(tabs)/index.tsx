@@ -18,6 +18,7 @@ import { useToast } from '../context/ToastContext';
 import { useEffect, useState } from 'react';
 import { getAllProducts } from '../service/service';
 import Product from '../entities/product';
+import FloatingChatButton from '@/components/FloatingChatButton';
 
 function CategoryCard({
   icon,
@@ -137,102 +138,7 @@ export default function HomeScreen() {
     showToast(`Browsing ${category} category`, 'info');
   };
 
-  // Sample data as fallback if API fails
-  const sampleRecommendedProducts = [
-    {
-      _id: '1',
-      title: 'UFC 300 VIP Experience',
-      price: 999.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1579882392185-ea7c6fd3a92a?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: 'user1',
-      type: 'concert_ticket' as any,
-      description: 'VIP experience for UFC 300',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-    {
-      _id: '2',
-      title: 'PlayStation Plus 12-Month Subscription',
-      price: 59.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1592155931584-901ac15763e3?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: 'user2',
-      type: 'gaming_account' as any,
-      description: '12-month PlayStation Plus subscription',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-    {
-      _id: '3',
-      title: 'Coachella 2025 Weekend Pass',
-      price: 499.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1514525253161-7a46d19cd819?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: 'user3',
-      type: 'concert_ticket' as any,
-      description: 'Weekend pass for Coachella 2025',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-    {
-      _id: '4',
-      title: 'Netflix Premium Annual Gift Card',
-      price: 215.88,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: 'user4',
-      type: 'social_media_account' as any,
-      description: 'Annual Netflix Premium subscription gift card',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-  ];
 
-  const sampleTrendingProducts = [
-    {
-      _id: '5',
-      title: 'Music Festival Pass',
-      price: 349.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1470229722913-7c0e2dbbafd3?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: 'user5',
-      type: 'concert_ticket' as any,
-      description: 'Pass for upcoming music festival',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-    {
-      _id: '6',
-      title: 'Gaming Gift Card',
-      price: 99.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1603190287605-e6ade32fa852?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: 'user6',
-      type: 'gaming_account' as any,
-      description: 'Gift card for gaming platform',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-  ];
 
   // Format price with currency
   const formatPrice = (price: number, currency: string) => {
@@ -241,12 +147,18 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
+
       <Header />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false}>
+        
         <View style={styles.hero}>
           <Text style={styles.heroTitle}>Discover Digital Assets</Text>
           <Text style={styles.heroSubtitle}>Buy and sell with confidence</Text>
+          <View style={{  }}>
+        {/* Other components like header, products, etc. */}
+        <FloatingChatButton />
+    </View>
 
           <View style={styles.searchContainer}>
             <TouchableOpacity
@@ -269,6 +181,7 @@ export default function HomeScreen() {
               <Ionicons name="options-outline" size={20} color="#fff" />
             </TouchableOpacity>
           </View>
+          
         </View>
 
         <Text style={styles.sectionTitle}>Explore Categories</Text>
@@ -304,8 +217,10 @@ export default function HomeScreen() {
             <TouchableOpacity
               onPress={() => showToast('View all featured offers', 'info')}
             >
+              
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
+            
           </View>
 
           <TouchableOpacity
@@ -336,6 +251,7 @@ export default function HomeScreen() {
               </View>
             </LinearGradient>
           </TouchableOpacity>
+  
         </View>
 
         <View style={styles.recommendedSection}>
@@ -390,7 +306,7 @@ export default function HomeScreen() {
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
           </View>
-
+    
           {isLoading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color="#6366f1" />
@@ -432,9 +348,10 @@ export default function HomeScreen() {
           )}
         </View>
 
-        {/* Toast Example Component */}
         <ToastExample />
       </ScrollView>
+
+  
     </View>
   );
 }
@@ -443,6 +360,7 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#f9fafb',
+    
   },
   content: {
     flex: 1,
