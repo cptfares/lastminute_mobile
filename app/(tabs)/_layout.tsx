@@ -3,7 +3,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
 
-// Custom tab bar icon component for the sell button
 function SellButton() {
   return (
     <View style={styles.sellButtonContainer}>
@@ -71,14 +70,16 @@ export default function TabLayout() {
       <Tabs.Screen
         name="sell"
         options={{
-          title: 'Sell',
-          tabBarIcon: ({ focused }) => <SellButton />,
-          tabBarLabel: ({ focused }) => (
-            <Text
-              style={[styles.sellLabel, focused ? styles.sellLabelActive : {}]}
-            >
-              Sell
-            </Text>
+          title: 'sell',
+          tabBarIcon: ({ focused, color, size }) => (
+            <View style={styles.sellIconContainer}>
+              <Ionicons
+                name={focused ? 'receipt' : 'pricetag'}
+                size={size}
+                color={color}
+              />
+              {focused && <View style={styles.activeIndicator} />}
+            </View>
           ),
         }}
       />
@@ -114,7 +115,9 @@ export default function TabLayout() {
           ),
         }}
       />
+      
     </Tabs>
+    
   );
 }
 
@@ -124,6 +127,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     position: 'relative',
     paddingTop: 8,
+  },
+  sellIconContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    position: 'relative',
+    paddingTop: 4,
   },
   activeIndicator: {
     position: 'absolute',

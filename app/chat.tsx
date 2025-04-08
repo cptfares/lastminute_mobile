@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -8,9 +8,12 @@ import {
   KeyboardAvoidingView,
   Platform,
   StyleSheet,
+  Image,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Product from '../app/entities/product';
 
 type Message = {
   id: string;
@@ -30,31 +33,74 @@ export default function ChatScreen() {
       timestamp: new Date(),
     },
   ]);
+  // Declare product as an array of Product objects
+  const [product, setProduct] = useState<Product[]>([]);
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const sendMessage = () => {
+  const API_URL = 'http://192.168.1.104:8000/recommend'; // Your FastAPI endpoint
+
+  useEffect(() => {
+    console.log('Product state updated:', product);
+  }, [product]);
+
+  const showToast = (msg: string, type: string) => {
+    Alert.alert(type, msg);
+  };
+
+  // Handle product press (e.g., navigate to details)
+
+
+  const sendMessage = async () => {
     if (!message.trim()) return;
 
+    // Add user's message to the chat
     const newMessage: Message = {
       id: Date.now().toString(),
       text: message,
       isUser: true,
       timestamp: new Date(),
     };
-
     setMessages((prev) => [...prev, newMessage]);
     setMessage('');
 
-    // Simulate AI response
-    setTimeout(() => {
+    // Scroll to the latest message
+    setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
+
+    try {
+      // Call your AI API
+      const response = await fetch(`${API_URL}?query=${encodeURIComponent(message)}`);
+      const data = await response.json();
+      console.log('API Response:', data);
+
       const aiResponse: Message = {
         id: (Date.now() + 1).toString(),
-        text: "I'm here to help! What would you like to know about our tickets and services?",
+        text: data.response || "Sorry, I couldn't process that. Please try again.",
         isUser: false,
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, aiResponse]);
-    }, 1000);
+
+      // Save the products if available in the response
+      if (data.products) {
+        // If not an array, wrap it into one
+        const productData = Array.isArray(data.products)
+          ? data.products
+          : [data.products];
+        setProduct(productData);
+        console.log('Products received from API:', data.products);
+      } else {
+        setProduct([]);
+      }
+    } catch (error) {
+      console.error('Error fetching AI response:', error);
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        text: "There was an error with the response. Please try again.",
+        isUser: false,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    }
   };
 
   return (
@@ -63,7 +109,7 @@ export default function ChatScreen() {
       style={styles.container}
     >
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
+        <TouchableOpacity onPress={() => router.push('/')} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
         <View style={styles.headerContent}>
@@ -103,15 +149,46 @@ export default function ChatScreen() {
                 msg.isUser ? styles.userMessage : styles.botMessage,
               ]}
             >
-              <Text style={[
-                styles.messageText,
-                msg.isUser ? styles.userMessageText : styles.botMessageText,
-              ]}>
+              <Text
+                style={[
+                  styles.messageText,
+                  msg.isUser ? styles.userMessageText : styles.botMessageText,
+                ]}
+              >
                 {msg.text}
               </Text>
             </View>
           </View>
         ))}
+
+        {product.length > 0 &&
+          product.map((item) => (
+            <TouchableOpacity
+              key={item._id} // Use the unique _id from your product data
+              style={styles.productCard}
+               onPress={() => router.push(`/product/${item._id}`)} 
+              onLongPress={() =>
+                showToast(`Added ${item.title} to favorites`, 'Success')
+              }
+            >
+              <Image
+                source={
+                  item.images && item.images[0]
+                    ? { uri: item.images[0] }
+                    : require('../assets/images/profile.jpg')
+                }
+                style={styles.productImage}
+              />
+              <View style={styles.productInfo}>
+                <Text style={styles.productTitle} numberOfLines={2}>
+                  {item.title || 'Unnamed Product'}
+                </Text>
+                <Text style={styles.productPrice}>
+                  ${item.price ? item.price.toFixed(2) : '0.00'}
+                </Text>
+              </View>
+            </TouchableOpacity>
+          ))}
       </ScrollView>
 
       <View style={styles.inputContainer}>
@@ -267,5 +344,37 @@ const styles = StyleSheet.create({
   },
   sendButtonDisabled: {
     backgroundColor: '#e5e7eb',
+  },
+  // Product card styles
+  productCard: {
+    flexDirection: 'row',
+    backgroundColor: '#fff',
+    borderRadius: 12,
+    padding: 12,
+    marginVertical: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  productImage: {
+    width: 100,
+    height: 100,
+    borderRadius: 8,
+  },
+  productInfo: {
+    flex: 1,
+    paddingLeft: 12,
+    justifyContent: 'center',
+  },
+  productTitle: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
+  },
+  productPrice: {
+    fontSize: 14,
+    color: '#6366f1',
   },
 });
