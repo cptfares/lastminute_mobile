@@ -23,25 +23,32 @@ const slides = [
     id: '1',
     title: 'Securely Buy & Sell Digital Assets',
     description: 'Your trusted platform for secure digital asset transactions',
-    image: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80',
+    image:
+      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: '2',
     title: 'Say Goodbye to Scams!',
-    description: 'Our platform makes it secure to trade, ensuring every transaction is safe and transparent',
-    image: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80',
+    description:
+      'Our platform makes it secure to trade, ensuring every transaction is safe and transparent',
+    image:
+      'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: '3',
     title: 'Fair Prices & Secure Payments!',
-    description: 'All payments are held in escrow until both parties confirm the transaction',
-    image: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
+    description:
+      'All payments are held in escrow until both parties confirm the transaction',
+    image:
+      'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
   },
   {
     id: '4',
     title: "Let's Get Started!",
-    description: 'Create your first listing or explore our deals. Start safely, privately, and transparently today!',
-    image: 'https://images.unsplash.com/photo-1618044733300-9472054094ee?w=800&auto=format&fit=crop&q=80',
+    description:
+      'Create your first listing or explore our deals. Start safely, privately, and transparently today!',
+    image:
+      'https://images.unsplash.com/photo-1618044733300-9472054094ee?w=800&auto=format&fit=crop&q=80',
   },
 ];
 
@@ -128,10 +135,16 @@ export default function OnboardingScreen() {
             </>
           ) : (
             <>
-              <TouchableOpacity onPress={handleComplete} style={styles.loginButton}>
+              <TouchableOpacity
+                onPress={() => router.push('/login')}
+                style={styles.loginButton}
+              >
                 <Text style={styles.loginButtonText}>Login</Text>
               </TouchableOpacity>
-              <TouchableOpacity onPress={handleComplete} style={styles.signUpButton}>
+              <TouchableOpacity
+                onPress={() => router.push('/signup')}
+                style={styles.signUpButton}
+              >
                 <Text style={styles.signUpButtonText}>Sign Up</Text>
               </TouchableOpacity>
             </>

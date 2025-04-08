@@ -18,6 +18,7 @@ import { router } from 'expo-router';
 import { addProduct } from '../service/service';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
+import Header from '../../components/Header';
 
 const categories = [
   { id: 'concert_ticket', name: 'Concert Tickets', icon: 'musical-notes' },

@@ -18,6 +18,7 @@ import { useToast } from '../context/ToastContext';
 import { useEffect, useState } from 'react';
 import { getAllProducts } from '../service/service';
 import Product from '../entities/product';
+import { useAuth } from '../context/AuthContext';
 
 function CategoryCard({
   icon,
@@ -88,6 +89,7 @@ export default function HomeScreen() {
   const [trendingProducts, setTrendingProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const fetchProducts = async () => {
@@ -431,9 +433,6 @@ export default function HomeScreen() {
             </View>
           )}
         </View>
-
-        {/* Toast Example Component */}
-        <ToastExample />
       </ScrollView>
     </View>
   );

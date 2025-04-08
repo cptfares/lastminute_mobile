@@ -2,10 +2,10 @@ import { RegisterUser } from './../entities/user';
 import axios from "axios";
 import {User} from "../entities/user"
 import { Product } from "../entities/product";
-import { Transaction } from "../entities/transaction";
+import { Transaction } from "../entities/transactions";
 
 const api = axios.create({
-  baseURL: "http://192.168.162.21:6005/api",
+  baseURL: "http://192.168.53.5:6005/api",
   headers: {
     "Content-Type": "application/json",
   },
@@ -209,11 +209,10 @@ export const getPurchaseIdByUserAndProduct = async (
 // Fetch product by ID
 export const getProductById = async (id: string): Promise<Product | null> => {
   try {
-    // In a real app, this would fetch a specific product by ID from your API
-    const product = mockProducts.find(p => p._id === id);
-    return product || null;
-  } catch (error) {
-    console.error('Error fetching product by ID:', error);
+    const response = await api.get(`/products/${id}`);
+    return response.data;
+  } catch (error: any) {
+    console.error("Error fetching purchaseId:", error);
     throw error;
   }
 };

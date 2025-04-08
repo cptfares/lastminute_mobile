@@ -2,6 +2,7 @@ import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, StyleSheet, Text } from 'react-native';
 import { BlurView } from 'expo-blur';
+import { FloatingChatButton } from '../../components/FloatingChatButton';
 
 // Custom tab bar icon component for the sell button
 function SellButton() {
@@ -114,6 +115,7 @@ export default function TabLayout() {
           ),
         }}
       />
+      <FloatingChatButton></FloatingChatButton>
     </Tabs>
   );
 }
