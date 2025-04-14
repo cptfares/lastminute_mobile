@@ -5,6 +5,7 @@ import { AuthProvider } from './context/AuthContext';
 import { ToastProvider } from './context/ToastContext';
 import { View, ActivityIndicator } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import NotificationScreen from './notification';
 
 declare global {
   interface Window {
@@ -28,3 +29,7 @@ export default function RootLayout() {
     </AuthProvider>
   );
 }
+
+// Add NotificationScreen to the navigation stack or tab navigator
+// Example for a stack navigator:
+// <Stack.Screen name="Notification" component={NotificationScreen} />

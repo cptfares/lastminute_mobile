@@ -3,9 +3,13 @@ import axios from "axios";
 import {User} from "../entities/user"
 import { Product } from "../entities/product";
 import { Transaction } from "../entities/transactions";
+import { Platform } from "react-native";
+import { getLocalIp } from "../utils/network";
+
+const ip = getLocalIp();
 
 const api = axios.create({
-  baseURL: "http://192.168.53.5:6005/api",
+  baseURL: `http://${ip}:6005/api`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -50,7 +54,6 @@ export const registerUser = async (userData: RegisterUser): Promise<User> => {
   }
 };
 
-// User Management APIs
 export const getAllUsers = async (): Promise<User[]> => {
   try {
     const response = await api.get("/users");
