@@ -159,7 +159,6 @@ export default function HomeScreen() {
           <Text style={styles.heroSubtitle}>Buy and sell with confidence</Text>
           <View style={{  }}>
         {/* Other components like header, products, etc. */}
-        <FloatingChatButton />
     </View>
 
           <View style={styles.searchContainer}>

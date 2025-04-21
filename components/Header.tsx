@@ -25,6 +25,13 @@ export default function Header() {
       >          <Ionicons name="notifications-outline" size={24} color="#000" />
         </TouchableOpacity>
       </View>
+      <View style={styles.rightIcons}>
+      <TouchableOpacity
+        style={styles.iconButton}
+        onPress={() => navigation.navigate('chat')}
+      >          <Ionicons name="chatbox-outline" size={24} color="#000" />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }

@@ -23,6 +23,7 @@ export default function ProfileScreen() {
   const [userProducts, setUserProducts] = useState<Product[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  console.log(userProducts)
 
   useEffect(() => {
     if (user?._id) {
@@ -41,7 +42,7 @@ export default function ProfileScreen() {
       console.error('Error fetching user products:', err);
       setError('Failed to load your products');
       // Set sample data as fallback
-      setUserProducts(sampleUserProducts);
+      setUserProducts(userProducts);
     } finally {
       setIsLoading(false);
     }
@@ -58,38 +59,7 @@ export default function ProfileScreen() {
   };
 
   // Sample data as fallback if API fails
-  const sampleUserProducts = [
-    {
-      _id: '1',
-      title: 'UFC 300 VIP Experience',
-      price: 999.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1579882392185-ea7c6fd3a92a?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: user._id,
-      type: 'concert_ticket' as any,
-      description: 'VIP experience for UFC 300',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-    {
-      _id: '2',
-      title: 'PlayStation Plus 12-Month Subscription',
-      price: 59.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1592155931584-901ac15763e3?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: user._id,
-      type: 'gaming_account' as any,
-      description: '12-month PlayStation Plus subscription',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-  ];
+  
 
   return (
     <View style={styles.container}>
@@ -169,7 +139,7 @@ export default function ProfileScreen() {
             </View>
           ) : (
             <View style={styles.productsGrid}>
-              {userProducts.map((product) => (
+              {userProducts.products.map((product) => (
                 <TouchableOpacity
                   key={product._id}
                   style={styles.productCard}
