@@ -24,15 +24,14 @@ const slides = [
     title: 'Securely Buy & Sell Digital Assets',
     description: 'Your trusted platform for secure digital asset transactions',
     image:
-      'https://images.unsplash.com/photo-1551288049-bebda4e38f71?w=800&auto=format&fit=crop&q=80',
-  },
+'https://www.theroanokestar.com/wp-content/uploads/2024/05/Picture1.jpg'  },
   {
     id: '2',
     title: 'Say Goodbye to Scams!',
     description:
       'Our platform makes it secure to trade, ensuring every transaction is safe and transparent',
     image:
-      'https://images.unsplash.com/photo-1563013544-824ae1b704d3?w=800&auto=format&fit=crop&q=80',
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSm4Tz-XC5seC86OTVNuoUlbqAwJkjltTEF-ao1DjpGLPHG2YdtTo_cC5aBvWw-dskkKw0&usqp=CAU',
   },
   {
     id: '3',
@@ -40,7 +39,7 @@ const slides = [
     description:
       'All payments are held in escrow until both parties confirm the transaction',
     image:
-      'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?w=800&auto=format&fit=crop&q=80',
+      'https://metapress.com/wp-content/uploads/2025/01/Empowering-Mobile-App-Development-Security-With-Blockchain-Technology.png',
   },
   {
     id: '4',
@@ -48,7 +47,7 @@ const slides = [
     description:
       'Create your first listing or explore our deals. Start safely, privately, and transparently today!',
     image:
-      'https://images.unsplash.com/photo-1618044733300-9472054094ee?w=800&auto=format&fit=crop&q=80',
+      'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ6fRGaWaVMnEsBKknfUWaqokQoxpPCYlBtxw&s',
   },
 ];
 
