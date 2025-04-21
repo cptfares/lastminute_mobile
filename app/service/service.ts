@@ -9,7 +9,7 @@ import { getLocalIp } from "../utils/network";
 const ip = getLocalIp();
 
 const api = axios.create({
-  baseURL: `http://${ip}:6005/api`,
+  baseURL: `http://172.21.144.1:6005/api`,
   headers: {
     "Content-Type": "application/json",
   },

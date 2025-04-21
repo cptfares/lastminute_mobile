@@ -227,8 +227,7 @@ export default function HomeScreen() {
           <TouchableOpacity
             style={styles.featuredCard}
             onPress={() => {
-              router.push('/product/1');
-              showToast('Viewing exclusive offer', 'success');
+              router.push('/search');
             }}
           >
             <LinearGradient
@@ -259,7 +258,10 @@ export default function HomeScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>For You</Text>
             <TouchableOpacity
-              onPress={() => showToast('View all recommended products', 'info')}
+              onPress={() =>{ 
+                router.push('/search');
+
+              }}
             >
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
@@ -302,7 +304,12 @@ export default function HomeScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Trending Now</Text>
             <TouchableOpacity
-              onPress={() => showToast('View all trending items', 'info')}
+              onPress={() =>{ 
+              router.push('/search');
+
+            
+            
+            }}
             >
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
