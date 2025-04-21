@@ -64,7 +64,7 @@ export default function OrdersScreen() {
       const fetchedTransactions = await getPurchasesByUser(userId);
   
       if (!fetchedTransactions || fetchedTransactions.length === 0) {
-        setTransactions([]); // No transactions found
+        setTransactions([]); 
         return;
       }
   
@@ -81,10 +81,11 @@ export default function OrdersScreen() {
       );
   
       setTransactions(updatedTransactions);
+
+    
       console.log("Transactions with their products:", updatedTransactions);
     } catch (err) {
       console.error("Error fetching transactions:", err);
-      setError("Failed to fetch transactions. Please try again later.");
     } finally {
       setIsLoading(false);
     }
@@ -97,10 +98,11 @@ export default function OrdersScreen() {
     if (userId) {
       fetchTransactionsWithProducts(userId);
 
+
     }
   }, [userId]); 
   
-  
+  console.log(transactions.length)
 transactions.map((transaction) => (
   console.log("the od"+transaction.product.product.title)
 ))
@@ -165,7 +167,7 @@ transactions.map((transaction) => (
           <Text style={styles.headerTitle}>My Orders</Text>
         </View>
     
-        {transactions?.length > 0 ? (
+        {transactions.length > 0 ? (
 transactions.map((transaction) => (
   <TouchableOpacity
               key={transaction._id}
@@ -453,13 +455,12 @@ transactions.map((transaction) => (
 
 const styles = StyleSheet.create({
   container: {
-    flex: 0,
+    flex: 1,
     backgroundColor: '#f9fafb',
     height: '100%', // Explicitly set height to 100% to take up the screen
 
   },
   contentContainer: {
-    padding: 16,
     paddingBottom: 120,
   },
   header: {
