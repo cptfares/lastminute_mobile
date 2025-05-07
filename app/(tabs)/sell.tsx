@@ -218,9 +218,8 @@ export default function SellScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
       >
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Sell Digital Product</Text>
-        </View>
+      <Header />
+
 
         <LinearGradient colors={['#f0f9ff', '#e0f2fe']} style={styles.infoCard}>
           <View style={styles.infoIconContainer}>

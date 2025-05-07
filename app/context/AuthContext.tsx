@@ -12,7 +12,7 @@ interface AuthContextType {
     email: string;
     password: string;
     age: string;
-  }) => Promise<void>;
+  }) => Promise<User>;
   signOut: () => Promise<void>;
   isLoading: boolean;
 }
@@ -164,3 +164,5 @@ export function useAuth() {
   }
   return context;
 }
+
+export default AuthContext;

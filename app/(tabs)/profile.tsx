@@ -13,7 +13,7 @@ import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 import { useAuth } from '../context/AuthContext';
 import { getProductByUserID } from '../service/service';
-import Product from '../entities/product';
+import { Product } from '../entities/product';
 import { useToast } from '../context/ToastContext';
 
 export default function ProfileScreen() {

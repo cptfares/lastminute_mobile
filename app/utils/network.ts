@@ -1,12 +1,16 @@
-import { NetworkInfo } from "react-native-network-info";
+import { Platform } from 'react-native';
 
 export function getLocalIp(): string {
-  let ip = "localhost";
-
-  // Attempt to get the local IP address
-  NetworkInfo.getIPAddress().then((address) => {
-    ip = address;
-  });
-
-  return ip;
+  // For Android emulator
+  if (Platform.OS === 'android') {
+    return '10.0.2.2';
+  }
+  // For iOS simulator
+  if (Platform.OS === 'ios') {
+    return 'localhost';
+  }
+  // For development, use localhost
+  return 'localhost';
 }
+
+export default getLocalIp;

@@ -6,14 +6,15 @@ import { Transaction } from "../entities/transactions";
 import { Platform } from "react-native";
 import { getLocalIp } from "../utils/network";
 
+// Initialize API with the correct IP
 const ip = getLocalIp();
-
-const api = axios.create({
+let api = axios.create({
   baseURL: `http://${ip}:6005/api`,
   headers: {
     "Content-Type": "application/json",
   },
 });
+
 interface LoginResponse {
   token: string;
 }
@@ -129,10 +130,15 @@ export const getProductsByType = async (type: string): Promise<Product[]> => {
 export const getProductByID = async (id: string): Promise<Product> => {
   try {
     const response = await api.get(`/products/${id}`);
+    console.log('Product API Response:', response.data); // Debug log
+    if (!response.data.product) {
+      console.warn(`Product with ID ${id} not found in response:`, response.data);
+      throw new Error(`Product with ID ${id} not found`);
+    }
     return response.data.product;
   } catch (error: any) {
-    console.error("Error fetching product:", error);
-    throw error;
+    console.error("Error fetching product:", error.response || error);
+    throw error.response?.data?.msg || error.message || 'Error fetching product';
   }
 };
 
@@ -179,10 +185,36 @@ export const getAllPurchases = async (): Promise<Transaction[]> => {
 
 export const getPurchasesByUser = async (userId: string): Promise<Transaction[]> => {
   try {
-    const response = await api.get(`/purchases/user/${userId}`);
+    console.log(`Making API request to fetch purchases for user ${userId}`);
+    console.log('API URL:', `${api.defaults.baseURL}/purchases/user/${userId}`);
+    
+    // Try both endpoint formats
+    let response;
+    try {
+      response = await api.get(`/purchases/user/${userId}`);
+    } catch (firstError) {
+      console.log('First endpoint attempt failed, trying alternative endpoint...');
+      try {
+        response = await api.get(`/purchase/user/${userId}`);
+      } catch (secondError) {
+        console.error('Both endpoint attempts failed:', { firstError, secondError });
+        throw secondError;
+      }
+    }
+    console.log('Purchases API Response:', response.data);
+    
+    if (!response.data || !Array.isArray(response.data)) {
+      console.warn('Unexpected response format:', response.data);
+      return [];
+    }
+    
     return response.data;
   } catch (error: any) {
-    console.error(`Error fetching purchases for user ${userId}:`, error);
+    console.error(`Error fetching purchases for user ${userId}:`, {
+      error: error,
+      response: error.response?.data,
+      status: error.response?.status
+    });
     throw error;
   }
 };
@@ -209,16 +241,8 @@ export const getPurchaseIdByUserAndProduct = async (
     throw error;
   }
 };
-// Fetch product by ID
-export const getProductById = async (id: string): Promise<Product | null> => {
-  try {
-    const response = await api.get(`/products/${id}`);
-    return response.data;
-  } catch (error: any) {
-    console.error("Error fetching purchaseId:", error);
-    throw error;
-  }
-};
+
+
 
 // Mock data for development
 const mockProducts: Product[] = [
@@ -340,3 +364,25 @@ const mockProducts: Product[] = [
     }
   },
 ];
+
+const service = {
+  loginUser,
+  registerUser,
+  getAllUsers,
+  updateUser,
+  getOneUser,
+  addProduct,
+  getAllProducts,
+  deleteProduct,
+  getProductsByType,
+  getProductByID,
+  updateProduct,
+  getProductByUserID,
+  createPurchase,
+  getAllPurchases,
+  getPurchasesByUser,
+  deletePurchase,
+  getPurchaseIdByUserAndProduct,
+};
+
+export default service;

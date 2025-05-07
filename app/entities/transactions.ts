@@ -1,4 +1,4 @@
-export   interface Transaction {
+export interface Transaction {
     _id: string;
     buyerId: string; // Reference to User
     sellerId: string; // Reference to User
@@ -11,4 +11,5 @@ export   interface Transaction {
     paymentMethod: "credit_card" | "paypal" | "stripe";
     deliveryStatus: "pending" | "delivered";
   }
-  
+
+export default Transaction;

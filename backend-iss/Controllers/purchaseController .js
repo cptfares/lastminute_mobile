@@ -37,13 +37,19 @@ exports.getAllPurchases = async (req, res) => {
   };
 exports.getPurchasesByUser = async (req, res) => {
     const { userId } = req.params;
+    console.log('Fetching purchases for user:', userId);
   
     try {
-      const purchases = await Purchase.find({ userId })
-  
+      // Use buyerId instead of userId to match the schema
+      const purchases = await Purchase.find({ buyerId: userId })
+        .populate('productId') // Populate the product details
+        .exec();
+
+      console.log('Found purchases:', purchases);
       res.status(200).json(purchases);
     } catch (error) {
-      res.status(500).json({ message: 'Error fetching user purchases', error });
+      console.error('Error fetching user purchases:', error);
+      res.status(500).json({ message: 'Error fetching user purchases', error: error.message });
     }
   };
   exports.deletePurchase = async (req, res) => {

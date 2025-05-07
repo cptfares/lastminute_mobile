@@ -10,20 +10,22 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useEffect, useState } from 'react';
 import { useToast } from '../context/ToastContext';
-import { getProductById, getPurchasesByUser } from '../service/service';
+import { getProductByID, getPurchasesByUser } from '../service/service';
 import {Product} from '../entities/product';
+import {Transaction} from '../entities/transactions';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Linking from 'expo-linking';
 import { router } from 'expo-router';
-import Header from '../../components/Header';
 import { useAuth } from '../context/AuthContext';
 import {jwtDecode} from 'jwt-decode';
+import Header from '../../components/Header';
+
 
 export default function OrdersScreen() {
   const { showToast } = useToast();
 
-    const [transactions, setTransactions] = useState([]);
-    const [selectedTransaction, setSelectedTransaction] = useState(null);
+    const [transactions, setTransactions] = useState<(Transaction & { product: { product: Product | null } })[]>([]);
+    const [selectedTransaction, setSelectedTransaction] = useState<(Transaction & { product: { product: Product | null } }) | null>(null);
 
 
   
@@ -38,12 +40,16 @@ export default function OrdersScreen() {
   
   if (token) {
     try {
+      console.log('Token available, attempting to decode...');
       decodedToken = jwtDecode(token);
       console.log('Decoded Token:', decodedToken);
 
-  
-      userId = decodedToken?.userId || decodedToken?.id; //
-      console.log('User ID:', userId);
+      userId = decodedToken?.userId || decodedToken?.id;
+      console.log('Extracted User ID:', userId);
+
+      if (!userId) {
+        console.warn('No userId found in decoded token:', decodedToken);
+      }
     } catch (error) {
       console.error('Error decoding token:', error);
     }
@@ -57,31 +63,42 @@ export default function OrdersScreen() {
 
   const fetchTransactionsWithProducts = async (userId) => {
     try {
+      console.log('Starting to fetch transactions for user:', userId);
       setIsLoading(true);
       setError(null);
   
       // Fetch all transactions for the user
       const fetchedTransactions = await getPurchasesByUser(userId);
+      console.log('Fetched transactions:', fetchedTransactions);
   
       if (!fetchedTransactions || fetchedTransactions.length === 0) {
         setTransactions([]); // No transactions found
         return;
       }
   
-      const updatedTransactions = await Promise.all(
-        fetchedTransactions.map(async (transaction) => {
-          try {
-            const product = await getProductById(transaction.productId);
-            return { ...transaction, product }; // Attach product to the transaction
-          } catch (productError) {
-            console.error(`Error fetching product ${transaction.productId}:`, productError);
-            return { ...transaction, product: null }; // If product fetching fails
-          }
-        })
-      );
+      console.log('Starting to fetch products for each transaction...');
+      // Map the populated product data to our expected format
+      const updatedTransactions = fetchedTransactions.map(transaction => {
+        // Check if productId is populated with full product data
+        const productData = typeof transaction.productId === 'object' && transaction.productId !== null
+          ? transaction.productId as unknown as Product
+          : null;
+
+        return {
+          ...transaction,
+          product: { product: productData }
+        };
+      });
+      console.log('Mapped transactions with products:', updatedTransactions);
+      console.log('All products fetched. Updated transactions:', updatedTransactions);
   
       setTransactions(updatedTransactions);
-      console.log("Transactions with their products:", updatedTransactions);
+      console.log("All transactions summary:", updatedTransactions.map(t => ({
+        id: t._id,
+        productTitle: t.product?.product?.title,
+        amount: t.amount,
+        date: t.createdAt
+      })));
     } catch (err) {
       console.error("Error fetching transactions:", err);
       setError("Failed to fetch transactions. Please try again later.");
@@ -92,18 +109,36 @@ export default function OrdersScreen() {
 
 
   useEffect(() => {
-    
-  
+    console.log('Orders Screen mounted, userId:', userId);
     if (userId) {
+      console.log('Calling fetchTransactionsWithProducts with userId:', userId);
       fetchTransactionsWithProducts(userId);
-
+    } else {
+      console.log('No userId available');
     }
   }, [userId]); 
   
   
-transactions.map((transaction) => (
-  console.log("the od"+transaction.product.product.title)
-))
+// Log detailed order information when transactions change
+useEffect(() => {
+  if (transactions.length > 0) {
+    console.log('=== Current Orders ===');
+    transactions.forEach((transaction) => {
+      const product = transaction.product?.product;
+      console.log(`Order ID: ${transaction._id}`);
+      console.log(`Product: ${product?.title || 'N/A'}`);
+      console.log(`Amount: $${transaction.amount}`);
+      console.log(`Purchase Date: ${formatDate(transaction.createdAt)}`);
+      if (product?.images?.length) {
+        console.log(`Product Images: ${product.images.join(', ')}`);
+      }
+      if (product?.metadata) {
+        console.log('Product Metadata:', product.metadata);
+      }
+      console.log('------------------------');
+    });
+  }
+}, [transactions]);
 
 
   
@@ -132,7 +167,7 @@ transactions.map((transaction) => (
     return `$${price.toFixed(2)}`;
   };
 
-  const getEventDate = (transaction) => {
+  const getEventDate = (transaction: Transaction & { product: { product: Product } }) => {
     if (
       transaction?.product.product &&
       transaction.product.product.metadata &&
@@ -154,59 +189,96 @@ transactions.map((transaction) => (
   };
 
   const renderOrdersList = () => {
-    // This would be a list of orders in a real app
-    // For demo purposes, we'll just show a single order that can be clicked
-    return (
-      <View>
-      <Header />
-    
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>My Orders</Text>
+    if (isLoading) {
+      return (
+        <View style={styles.loadingContainer}>
+          <ActivityIndicator size="large" color="#6366f1" />
+          <Text style={styles.loadingText}>Loading your orders...</Text>
         </View>
-    
-        {transactions?.length > 0 ? (
-transactions.map((transaction) => (
-  <TouchableOpacity
-              key={transaction._id}
-              style={styles.orderListItem}
+      );
+    }
 
-              onPress={() =>{ setViewingOrderDetails(true);
-                setSelectedTransaction(transaction);
+    if (error) {
+      return (
+        <View style={styles.errorContainer}>
+          <Text style={styles.errorText}>{error}</Text>
+        </View>
+      );
+    }
+
+    if (!transactions || transactions.length === 0) {
+      return (
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>No orders found</Text>
+        </View>
+      );
+    }
+
+    return (
+      <ScrollView style={styles.ordersList}>
+        {transactions.map((transaction) => (
+          <TouchableOpacity
+            key={transaction._id}
+            style={styles.orderListItem}
+            onPress={() => {
+              if (transaction.product.product) {
+                setSelectedTransaction(transaction as Transaction & { product: { product: Product } });
+                setViewingOrderDetails(true);
+              } else {
+                console.warn('Cannot view details - product data is missing');
               }
-              }
-            >
-              <Image source={{ uri: transaction.product.product.images[0] }} style={styles.orderListItemImage} />
-              <View style={styles.orderListItemInfo}>
-                <Text style={styles.orderListItemTitle} numberOfLines={1}>
-                  {transaction.product.product.title}
+            }}
+          >
+            <Image
+              source={{
+                uri:
+                  transaction.product.product?.images?.[0] || 'https://via.placeholder.com/60'
+              }}
+              style={styles.orderListItemImage}
+            />
+            <View style={styles.orderListItemInfo}>
+              <Text style={styles.orderListItemTitle}>
+                {transaction.product.product?.title || 'Product Title'}
+              </Text>
+              <Text style={styles.orderListItemPrice}>
+                {formatPrice(transaction.amount, transaction.currency)}
+              </Text>
+              <View style={styles.orderListItemMeta}>
+                <Text style={styles.orderListItemDate}>
+                  {formatDate(transaction.createdAt)}
                 </Text>
-                <Text style={styles.orderListItemPrice}>
-                  {formatPrice(transaction.product.product.price, transaction.product.product.currency)}
-                </Text>
-                <View style={styles.orderListItemMeta}>
-                  <Text style={styles.orderListItemDate}>
-                    Purchased on {formatDate(transaction.product.product.createdAt)}
+                <View style={[styles.statusBadge, {
+                  backgroundColor: transaction.deliveryStatus === 'delivered' ? '#ecfdf5' : '#fff7ed'
+                }]}>
+                  <Text style={[styles.statusBadgeText, {
+                    color: transaction.deliveryStatus === 'delivered' ? '#10b981' : '#f97316'
+                  }]}>
+                    {transaction.deliveryStatus.charAt(0).toUpperCase() + transaction.deliveryStatus.slice(1)}
                   </Text>
-                  <View style={styles.orderListItemStatus}>
-                    <View style={styles.statusDot} />
-                    <Text style={styles.statusText}>{transaction.deliveryStatus}</Text>
-                  </View>
                 </View>
               </View>
-              <Ionicons name="chevron-forward" size={20} color="#9ca3af" />
-            </TouchableOpacity>
-          ))
-        ) : (
-          <Text >No orders found</Text>
-        )}
+              <View style={styles.orderListItemMeta}>
+                <Text style={styles.orderListItemDate}>
+                  Payment: {transaction.paymentMethod}
+                </Text>
+                <View style={[styles.statusBadge, {
+                  backgroundColor: transaction.status === 'completed' ? '#ecfdf5' : '#fff7ed'
+                }]}>
+                  <Text style={[styles.statusBadgeText, {
+                    color: transaction.status === 'completed' ? '#10b981' : '#f97316'
+                  }]}>
+                    {transaction.status.charAt(0).toUpperCase() + transaction.status.slice(1)}
+                  </Text>
+                </View>
+              </View>
+            </View>
+          </TouchableOpacity>
+        ))}
       </ScrollView>
-    </View>
-    
     );
   };
 
-  if (isLoading) {
+    if (isLoading) {
     return (
       <View style={styles.loadingContainer}>
         <ActivityIndicator size="large" color="#6366f1" />
@@ -232,7 +304,12 @@ transactions.map((transaction) => (
   }
 
   if (!viewingOrderDetails) {
-    return renderOrdersList();
+    return (
+      <>
+        <Header />
+        {renderOrdersList()}
+      </>
+    );
   }
 
   return (
@@ -240,7 +317,10 @@ transactions.map((transaction) => (
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
+      <Header />
+
       <View style={styles.header}>
+
         <TouchableOpacity
           style={styles.backButton}
           onPress={goBackToOrdersList}
@@ -263,27 +343,27 @@ transactions.map((transaction) => (
             <View style={styles.orderHeader}>
               <View style={styles.orderStatus}>
                 <View style={styles.statusDot} />
-                <Text style={styles.statusText}>{selectedTransaction.deliveryStatus}</Text>
+                <Text style={styles.statusText}>{selectedTransaction?.deliveryStatus}</Text>
               </View>
-              <Text style={styles.orderDate}>
-                Purchased on {formatDate(selectedTransaction.product.product.createdAt)}
-              </Text>
+                <Text style={styles.orderDate}>
+                  Purchased on {formatDate(selectedTransaction?.createdAt)}
+                </Text>
             </View>
 
             <View style={styles.productContainer}>
               <Image
-                source={{ uri: selectedTransaction.product.product.images[0] }}
+                source={{ uri: selectedTransaction?.product?.product?.images?.[0] || 'https://via.placeholder.com/60' }}
                 style={styles.productImage}
               />
               <View style={styles.productInfo}>
-                <Text style={styles.productTitle}>{selectedTransaction.product.product.title}</Text>
+                <Text style={styles.productTitle}>{selectedTransaction.product.product?.title || 'N/A'}</Text>
                 <Text style={styles.productPrice}>
-                  {formatPrice(selectedTransaction.product.product.price, selectedTransaction.product.product.currency)}
+                  {formatPrice(selectedTransaction.amount, selectedTransaction.currency)}
                 </Text>
                 <View style={styles.orderIdContainer}>
                   <Text style={styles.orderIdLabel}>Order ID:</Text>
                   <Text style={styles.orderId}>
-                    ORD-{selectedTransaction.product.product._id}-{Date.now().toString().slice(-6)}
+                    ORD-{selectedTransaction._id}-{Date.now().toString().slice(-6)}
                   </Text>
                 </View>
               </View>
@@ -300,7 +380,12 @@ transactions.map((transaction) => (
                 </View>
                 <View style={styles.detailContent}>
                   <Text style={styles.detailLabel}>Event Date</Text>
-                  <Text style={styles.detailValue}>{getEventDate(selectedTransaction)}</Text>
+                  <Text style={styles.detailValue}>
+                    {selectedTransaction.product.product?.metadata?.concertTicket?.eventDate ? 
+                      formatDate(new Date(selectedTransaction.product.product.metadata.concertTicket.eventDate).toISOString()) : 
+                      'N/A'
+                    }
+                  </Text>
                 </View>
               </View>
 
@@ -452,6 +537,42 @@ transactions.map((transaction) => (
 }
 
 const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: '#6b7280',
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  errorText: {
+    fontSize: 16,
+    color: '#ef4444',
+    textAlign: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: '#6b7280',
+    textAlign: 'center',
+  },
+  ordersList: {
+    flex: 1,
+    padding: 16,
+  },
   container: {
     flex: 0,
     backgroundColor: '#f9fafb',
@@ -478,23 +599,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#111827',
   },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
-  loadingText: {
-    marginTop: 12,
-    fontSize: 16,
-    color: '#6b7280',
-  },
-  errorContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    padding: 20,
-  },
   errorTitle: {
     fontSize: 18,
     fontWeight: 'bold',
@@ -502,11 +606,11 @@ const styles = StyleSheet.create({
     marginTop: 12,
     marginBottom: 8,
   },
-  errorText: {
+  errorMessage: {
     fontSize: 14,
-    color: '#6b7280',
     textAlign: 'center',
     marginBottom: 20,
+    color: '#ef4444',
   },
   retryButton: {
     backgroundColor: '#6366f1',

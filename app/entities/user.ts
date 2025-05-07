@@ -1,4 +1,4 @@
-export   interface User {
+export interface User {
     _id: string;
     userName: string;
     createdAt: string;
@@ -9,3 +9,5 @@ export   interface User {
     status: "active" | "banned";
   }
   export type RegisterUser = Omit<User, "_id" | "createdAt" | "role" | "status">;
+
+export default User;
