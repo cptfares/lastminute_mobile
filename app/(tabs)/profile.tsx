@@ -37,11 +37,11 @@ export default function ProfileScreen() {
     try {
       const products = await getProductByUserID(user._id);
       setUserProducts(products);
+      setError(null); // Clear any previous errors
     } catch (err) {
       console.error('Error fetching user products:', err);
-      setError('Failed to load your products');
-      // Set sample data as fallback
-      setUserProducts(sampleUserProducts);
+      setError('Failed to load your products. Please try again later.');
+      setUserProducts([]); // Reset products on error
     } finally {
       setIsLoading(false);
     }

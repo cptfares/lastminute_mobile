@@ -19,7 +19,7 @@ import { addProduct } from '../service/service';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import Header from '../../components/Header';
-
+ 
 const categories = [
   { id: 'concert_ticket', name: 'Concert Tickets', icon: 'musical-notes' },
   { id: 'gaming_account', name: 'Gaming Accounts', icon: 'game-controller' },
@@ -35,7 +35,7 @@ const categories = [
     icon: 'document',
   },
 ];
-
+ 
 export default function SellScreen() {
   const { showToast } = useToast();
   const [title, setTitle] = useState('');
@@ -48,15 +48,52 @@ export default function SellScreen() {
   >([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user } = useAuth();
-
+ 
+ 
+  const uploadImageToCloudinary = async (imageUri: string): Promise<string | null> => {
+    try {
+      // Convert to Blob for web compatibility
+      const blob = await (await fetch(imageUri)).blob();
+ 
+      const data = new FormData();
+      data.append('file', blob);
+      data.append('upload_preset', 'ADAAAAAAA'); // Replace with your unsigned preset
+ 
+      const res = await fetch('https://api.cloudinary.com/v1_1/dgficzevd/image/upload', {
+        method: 'POST',
+        body: data,
+      });
+ 
+      const result = await res.json();
+ 
+      if (res.ok) {
+        return result.secure_url;
+      } else {
+        console.error('Upload failed:', result);
+        return null;
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      return null;
+    }
+  };
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
   const pickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-
+ 
     if (status !== 'granted') {
       showToast('Permission to access media library is required!', 'error');
       return;
     }
-
+ 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
@@ -64,17 +101,28 @@ export default function SellScreen() {
         aspect: [4, 3],
         quality: 0.8,
       });
-
+ 
       if (!result.canceled && result.assets && result.assets.length > 0) {
-        setImages([...images, result.assets[0].uri]);
-        showToast('Image added successfully!', 'success');
+        const localUri = result.assets[0].uri;
+ 
+        showToast('Uploading image...', 'info');
+ 
+        const cloudinaryUrl = await uploadImageToCloudinary(localUri);
+ 
+        if (cloudinaryUrl) {
+          setImages(prev => [...prev, cloudinaryUrl]);
+          showToast('Image uploaded successfully!', 'success');
+        } else {
+          showToast('Image upload failed', 'error');
+        }
       }
     } catch (error) {
-      showToast('Error picking image', 'error');
-      console.error('Error picking image:', error);
+      showToast('Error picking or uploading image', 'error');
+      console.error('Error:', error);
     }
   };
-
+ 
+ 
   const pickDocument = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
@@ -85,7 +133,7 @@ export default function SellScreen() {
         ],
         copyToCacheDirectory: true,
       });
-
+ 
       if (
         result.canceled === false &&
         result.assets &&
@@ -94,7 +142,7 @@ export default function SellScreen() {
         const file = result.assets[0];
         const fileSize = formatFileSize(file.size || 0);
         const fileType = getFileType(file.mimeType || '', file.name || '');
-
+ 
         setDigitalFiles([
           ...digitalFiles,
           {
@@ -104,7 +152,7 @@ export default function SellScreen() {
             uri: file.uri,
           },
         ]);
-
+ 
         showToast('Digital content added successfully!', 'success');
       }
     } catch (error) {
@@ -112,61 +160,61 @@ export default function SellScreen() {
       console.error('Error picking document:', error);
     }
   };
-
+ 
   const getFileType = (mimeType: string, fileName: string): string => {
     if (mimeType.includes('pdf')) return 'PDF';
     if (mimeType.includes('zip')) return 'ZIP';
-
+ 
     // Fallback to extension if mime type is not specific enough
     const extension = fileName.split('.').pop()?.toUpperCase();
     if (extension) return extension;
-
+ 
     return 'File';
   };
-
+ 
   const formatFileSize = (bytes: number): string => {
     if (bytes === 0) return '0 Bytes';
-
+ 
     const k = 1024;
     const sizes = ['Bytes', 'KB', 'MB', 'GB'];
     const i = Math.floor(Math.log(bytes) / Math.log(k));
-
+ 
     return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
   };
-
+ 
   const removeImage = (index: number) => {
     const newImages = [...images];
     newImages.splice(index, 1);
     setImages(newImages);
     showToast('Image removed', 'info');
   };
-
+ 
   const removeFile = (index: number) => {
     const newFiles = [...digitalFiles];
     newFiles.splice(index, 1);
     setDigitalFiles(newFiles);
     showToast('File removed', 'info');
   };
-
+ 
   const handleSubmit = async () => {
     if (!title || !price || !description || !category) {
       showToast('Please fill in all required fields', 'error');
       return;
     }
-
+ 
     if (images.length === 0) {
       showToast('Please add at least one image', 'error');
       return;
     }
-
+ 
     if (digitalFiles.length === 0) {
       showToast('Please add at least one digital file', 'error');
       return;
     }
-
+ 
     try {
       setIsSubmitting(true);
-
+ 
       // Simulate API call
       const newProduct = {
         sellerId: user._id, // ✅ Get user ID correctly
@@ -176,16 +224,16 @@ export default function SellScreen() {
         price: parseFloat(price),
         quantity: 1,
         currency: 'LST',
-        images: [],
+        images: images, // ✅ Cloudinary URLs
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         status: 'available',
       };
-
+ 
       try {
         const response = await addProduct(newProduct);
         console.log('Product added successfully:', response);
-
+ 
         router.push({
           pathname: '/product-share',
           params: { id: newProduct.sellerId },
@@ -205,10 +253,10 @@ export default function SellScreen() {
       setImages([]);
       setDigitalFiles([]);
     }
-
+ 
     // Navigate to home
   };
-
+ 
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
@@ -218,9 +266,10 @@ export default function SellScreen() {
         style={styles.container}
         contentContainerStyle={styles.contentContainer}
       >
-      <Header />
-
-
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Sell Digital Product</Text>
+        </View>
+ 
         <LinearGradient colors={['#f0f9ff', '#e0f2fe']} style={styles.infoCard}>
           <View style={styles.infoIconContainer}>
             <Ionicons name="information-circle" size={24} color="#0284c7" />
@@ -233,10 +282,10 @@ export default function SellScreen() {
             </Text>
           </View>
         </LinearGradient>
-
+ 
         <View style={styles.formSection}>
           <Text style={styles.sectionTitle}>Product Details</Text>
-
+ 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Title</Text>
             <TextInput
@@ -246,7 +295,7 @@ export default function SellScreen() {
               onChangeText={setTitle}
             />
           </View>
-
+ 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Price (LST)</Text>
             <TextInput
@@ -257,7 +306,7 @@ export default function SellScreen() {
               onChangeText={setPrice}
             />
           </View>
-
+ 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Description</Text>
             <TextInput
@@ -269,7 +318,7 @@ export default function SellScreen() {
               onChangeText={setDescription}
             />
           </View>
-
+ 
           <View style={styles.inputGroup}>
             <Text style={styles.inputLabel}>Category</Text>
             <View style={styles.categoriesContainer}>
@@ -300,14 +349,14 @@ export default function SellScreen() {
             </View>
           </View>
         </View>
-
+ 
         <View style={styles.formSection}>
           <Text style={styles.sectionTitle}>Product Images</Text>
           <Text style={styles.sectionDescription}>
             Add clear images of your digital product. For tickets, include event
             details.
           </Text>
-
+ 
           <View style={styles.imagesContainer}>
             {images.map((uri, index) => (
               <View key={index} style={styles.imagePreviewContainer}>
@@ -320,7 +369,7 @@ export default function SellScreen() {
                 </TouchableOpacity>
               </View>
             ))}
-
+ 
             {images.length < 3 && (
               <TouchableOpacity
                 style={styles.addImageButton}
@@ -332,14 +381,14 @@ export default function SellScreen() {
             )}
           </View>
         </View>
-
+ 
         <View style={styles.formSection}>
           <Text style={styles.sectionTitle}>Digital Content</Text>
           <Text style={styles.sectionDescription}>
             Upload the digital files that buyers will receive after purchase
             (PDF, ZIP).
           </Text>
-
+ 
           <View style={styles.filesContainer}>
             {digitalFiles.map((file, index) => (
               <View key={index} style={styles.fileCard}>
@@ -370,7 +419,7 @@ export default function SellScreen() {
                 </TouchableOpacity>
               </View>
             ))}
-
+ 
             <TouchableOpacity
               style={styles.addFileButton}
               onPress={pickDocument}
@@ -380,7 +429,7 @@ export default function SellScreen() {
             </TouchableOpacity>
           </View>
         </View>
-
+ 
         <View style={styles.termsContainer}>
           <Ionicons name="shield-checkmark-outline" size={20} color="#6366f1" />
           <Text style={styles.termsText}>
@@ -388,7 +437,7 @@ export default function SellScreen() {
             this is a legitimate digital product.
           </Text>
         </View>
-
+ 
         <TouchableOpacity
           style={[
             styles.submitButton,
@@ -410,7 +459,7 @@ export default function SellScreen() {
     </KeyboardAvoidingView>
   );
 }
-
+ 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
