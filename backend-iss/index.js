@@ -3,8 +3,9 @@ const userRoute = require("./Routes/userRoute");
 const connectDb = require("./configuration/DB");
 const cors = require("cors"); 
 const dotenv = require("dotenv");
-const prodcuteRoute=require("./Routes/productRoute")
-const purchaseRoute=require("./Routes/purchasesRoute")
+const prodcuteRoute = require("./Routes/productRoute");
+const purchaseRoute = require("./Routes/purchasesRoute");
+const walletRoute = require("./Routes/walletRoute");
 const os = require("os");
 
 dotenv.config();
@@ -18,7 +19,8 @@ app.use(cors());
 
 app.use(express.json());
 
-app.use("/api", userRoute,prodcuteRoute,purchaseRoute);
+app.use("/api", userRoute, prodcuteRoute, purchaseRoute);
+app.use("/api/wallet", walletRoute);
 
 // Function to get the local IP address
 function getLocalIp() {

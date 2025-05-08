@@ -1,64 +1,98 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   View,
   Text,
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  Image,
   Modal,
   TextInput,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
-
-type Transaction = {
-  id: string;
-  type: 'sale' | 'purchase';
-  productName: string;
-  amount: string;
-  lstAmount: string;
-  date: string;
-  status: 'completed' | 'pending' | 'failed';
-};
+import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
+import { getWalletInfo, addFunds, getTransactionHistory } from '../service/service';
+import { WalletTransaction } from '../entities/wallet';
 
 export default function WalletScreen() {
-  const [selectedPeriod, setSelectedPeriod] = useState<
-    '1D' | '1W' | '1M' | '1Y'
-  >('1W');
+  const { user, token } = useAuth();
+  const { showToast } = useToast();
+  const [selectedPeriod, setSelectedPeriod] = useState<'1D' | '1W' | '1M' | '1Y'>('1W');
   const [isLoading, setIsLoading] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [loadAmount, setLoadAmount] = useState('');
+  const [balance, setBalance] = useState(0);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [isRefreshing, setIsRefreshing] = useState(false);
 
-  const transactions: Transaction[] = [
-    {
-      id: '1',
-      type: 'sale',
-      productName: 'Coachella Weekend Pass',
-      amount: '$500.00',
-      lstAmount: '500 LST',
-      date: '2 hours ago',
-      status: 'completed',
-    },
-    {
-      id: '2',
-      type: 'purchase',
-      productName: 'Netflix Gift Card',
-      amount: '$250.00',
-      lstAmount: '250 LST',
-      date: 'Yesterday',
-      status: 'completed',
-    },
-    {
-      id: '3',
-      type: 'sale',
-      productName: 'UFC 300 Ticket',
-      amount: '$1000.00',
-      lstAmount: '1000 LST',
-      date: '3 days ago',
-      status: 'completed',
-    },
-  ];
+  const fetchWalletData = async () => {
+    try {
+      setIsLoading(true);
+      const walletInfo = await getWalletInfo(token);
+      setBalance(walletInfo.balance);
+      const history = await getTransactionHistory(10, token);
+      setTransactions(history);
+    } catch (error: any) {
+      showToast('error', error.message || 'Error fetching wallet data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchWalletData();
+  }, []);
+
+  const handleLoadLST = async () => {
+    if (!loadAmount || parseFloat(loadAmount) <= 0) {
+      showToast('error', 'Please enter a valid amount');
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      await addFunds(parseFloat(loadAmount), 'Deposit', token);
+      await fetchWalletData();
+      setShowLoadModal(false);
+      setLoadAmount('');
+      showToast('success', 'Funds added successfully');
+    } catch (error: any) {
+      showToast('error', error.message || 'Error adding funds');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading && !transactions.length) {
+    return (
+      <View style={styles.container}>
+        <ActivityIndicator size="large" color="#0000ff" />
+      </View>
+    );
+  }
+
+  const formatDate = (date: Date) => {
+    const now = new Date();
+    const transactionDate = new Date(date);
+    const diffTime = Math.abs(now.getTime() - transactionDate.getTime());
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 0) {
+      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
+      if (diffHours === 0) {
+        const diffMinutes = Math.floor(diffTime / (1000 * 60));
+        return `${diffMinutes} minutes ago`;
+      }
+      return `${diffHours} hours ago`;
+    } else if (diffDays === 1) {
+      return 'Yesterday';
+    } else {
+      return `${diffDays} days ago`;
+    }
+  };
 
   const loadMore = () => {
     setIsLoading(true);
@@ -67,14 +101,7 @@ export default function WalletScreen() {
     }, 1000);
   };
 
-  const handleLoadLST = () => {
-    // Here you would handle the LST loading process
-    console.log('Loading LST:', loadAmount);
-    setShowLoadModal(false);
-    setLoadAmount('');
-  };
-
-  const getTransactionIcon = (type: Transaction['type']) => {
+  const getTransactionIcon = (type: WalletTransaction['type']) => {
     return type === 'sale' ? 'arrow-up-circle' : 'arrow-down-circle';
   };
 
@@ -84,8 +111,8 @@ export default function WalletScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>LST Balance</Text>
-          <Text style={styles.balanceAmount}>1,750 LST</Text>
-          <Text style={styles.fiatEquivalent}>≈ $1,750.00 USD</Text>
+          <Text style={styles.balanceAmount}>{balance} LST</Text>
+          <Text style={styles.fiatEquivalent}>≈ ${balance.toFixed(2)} USD</Text>
 
           <View style={styles.actionButtons}>
             <TouchableOpacity
@@ -139,34 +166,34 @@ export default function WalletScreen() {
 
         <View style={styles.transactionsSection}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          {transactions.map((transaction) => (
-            <View key={transaction.id} style={styles.transactionItem}>
+          {transactions.map((transaction, index) => (
+            <View key={index} style={styles.transactionItem}>
               <View
                 style={[
                   styles.transactionIcon,
-                  transaction.type === 'sale'
+                  transaction.type === 'credit'
                     ? styles.saleIcon
                     : styles.purchaseIcon,
                 ]}
               >
                 <Ionicons
-                  name={getTransactionIcon(transaction.type)}
+                  name={transaction.type === 'credit' ? 'arrow-up-circle' : 'arrow-down-circle'}
                   size={24}
                   color="#fff"
                 />
               </View>
               <View style={styles.transactionInfo}>
                 <Text style={styles.transactionTitle}>
-                  {transaction.productName}
+                  {transaction.description}
                 </Text>
                 <Text style={styles.transactionType}>
-                  {transaction.type === 'sale' ? 'Sold' : 'Purchased'}
+                  {transaction.type === 'credit' ? 'Deposit' : 'Withdrawal'}
                 </Text>
-                <Text style={styles.transactionDate}>{transaction.date}</Text>
+                <Text style={styles.transactionDate}>{formatDate(transaction.createdAt)}</Text>
               </View>
               <View style={styles.transactionAmount}>
-                <Text style={styles.lstAmount}>{transaction.lstAmount}</Text>
-                <Text style={styles.fiatAmount}>{transaction.amount}</Text>
+                <Text style={styles.lstAmount}>{transaction.amount} LST</Text>
+                <Text style={styles.fiatAmount}>${transaction.amount.toFixed(2)}</Text>
               </View>
             </View>
           ))}

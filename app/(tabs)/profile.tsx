@@ -10,6 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 import { useAuth } from '../context/AuthContext';
+import { useToast } from '../context/ToastContext';
 
 
 export default function ProfileScreen() {

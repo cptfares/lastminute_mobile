@@ -8,7 +8,7 @@ import {
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { createPurchase, updateProduct } from './service/service';
+import { createPurchase, updateProduct, deductFunds } from './service/service';
 import { useAuth } from './context/AuthContext';
 import { useToast } from './context/ToastContext';
 
@@ -17,7 +17,7 @@ type PaymentMethod = 'card' | 'crypto' | null;
 export default function CheckoutScreen() {
   const router = useRouter();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
-  const { user, signOut } = useAuth();
+  const { user, token } = useAuth();
   const [error, setError] = useState<string | null>(null);
   const { showToast } = useToast();
   const params = useLocalSearchParams();
@@ -29,7 +29,7 @@ export default function CheckoutScreen() {
     sellerId: params.sellerId,
   };
 
-  const handlePlaceOrder = () => {
+  const handlePlaceOrder = async () => {
     if (!paymentMethod) {
       showToast('Warning: Pick a payment method.', 'warning');
       return;
@@ -37,7 +37,7 @@ export default function CheckoutScreen() {
 
     try {
       // Create transaction
-      const transaction = createPurchase({
+      const transaction = await createPurchase({
         buyerId: user._id,
         sellerId: item.sellerId,
         productId: item.id,
@@ -48,14 +48,17 @@ export default function CheckoutScreen() {
         deliveryStatus: 'pending',
       });
 
+      // Deduct funds from wallet
+      await deductFunds(item.price, `Purchase: ${item.name}`, transaction._id, token);
+
       // Update product status to "sold"
-      updateProduct(item.id, { status: 'sold' });
+      await updateProduct(item.id, { status: 'sold' });
 
       // Navigate to success page
       router.push('/order-success');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Order placement failed:', error);
-      showToast('error please try again ', 'warning');
+      showToast(error.message || 'Failed to place order. Please try again.', 'error');
     }
   };
 

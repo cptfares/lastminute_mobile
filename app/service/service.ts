@@ -3,6 +3,7 @@ import axios from "axios";
 import {User} from "../entities/user"
 import { Product } from "../entities/product";
 import { Transaction } from "../entities/transactions";
+import { Wallet, WalletTransaction } from "../entities/wallet";
 import { Platform } from "react-native";
 import { getLocalIp } from "../utils/network";
 
@@ -188,7 +189,6 @@ export const getPurchasesByUser = async (userId: string): Promise<Transaction[]>
     console.log(`Making API request to fetch purchases for user ${userId}`);
     console.log('API URL:', `${api.defaults.baseURL}/purchases/user/${userId}`);
     
-    // Try both endpoint formats
     let response;
     try {
       response = await api.get(`/purchases/user/${userId}`);
@@ -198,26 +198,89 @@ export const getPurchasesByUser = async (userId: string): Promise<Transaction[]>
         response = await api.get(`/purchase/user/${userId}`);
       } catch (secondError) {
         console.error('Both endpoint attempts failed:', { firstError, secondError });
-        throw secondError;
       }
     }
-    console.log('Purchases API Response:', response.data);
-    
-    if (!response.data || !Array.isArray(response.data)) {
-      console.warn('Unexpected response format:', response.data);
-      return [];
-    }
-    
-    return response.data;
+    return response?.data || [];
   } catch (error: any) {
-    console.error(`Error fetching purchases for user ${userId}:`, {
-      error: error,
-      response: error.response?.data,
-      status: error.response?.status
-    });
+    console.error("Error fetching user purchases:", error);
     throw error;
   }
 };
+
+// Wallet APIs
+export const getWalletInfo = async (token: string): Promise<Wallet> => {
+  try {
+    const response = await api.get('/wallet/info', {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+  } catch (error: any) {
+    console.error("Error fetching wallet info:", error);
+    throw error;
+  }
+};
+
+export const addFunds = async (amount: number, description: string, token: string): Promise<{ balance: number; transaction: WalletTransaction }> => {
+  try {
+    const response = await api.post('/wallet/add-funds', 
+      { amount, description },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+    return response.data.data;
+  } catch (error: any) {
+    console.error("Error adding funds:", error);
+    throw error;
+  }
+};
+
+export const getTransactionHistory = async (limit: number = 10, token: string): Promise<WalletTransaction[]> => {
+  try {
+    const response = await api.get(`/wallet/transactions?limit=${limit}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    return response.data.data;
+  } catch (error: any) {
+    console.error("Error fetching transaction history:", error);
+    throw error;
+  }
+};
+
+// Internal helper for purchase flow
+export const deductFunds = async (amount: number, description: string, purchaseId: string, token: string): Promise<void> => {
+  try {
+    await api.post('/wallet/deduct-funds',
+      { amount, description, purchaseId },
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+  } catch (error: any) {
+    console.error("Error deducting funds:", error);
+    throw error;
+  }
+}
+
+export const getPurchasesByUser1 = async (userId: string): Promise<Transaction[]> => {
+  try {
+    console.log(`Making API request to fetch purchases for user ${userId}`);
+    console.log('API URL:', `${api.defaults.baseURL}/purchases/user/${userId}`);
+    
+    let response;
+    try {
+      response = await api.get(`/purchases/user/${userId}`);
+    } catch (firstError) {
+      console.log('First endpoint attempt failed, trying alternative endpoint...');
+      try {
+        response = await api.get(`/purchase/user/${userId}`);
+      } catch (secondError) {
+        console.error('Both endpoint attempts failed:', { firstError, secondError });
+      }
+    }
+    return response?.data || [];
+  } catch (error: any) {
+    console.error("Error fetching user purchases:", error);
+    throw error;
+  }
+};
+
 
 export const deletePurchase = async (purchaseId: string): Promise<any> => {
   try {
