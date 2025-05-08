@@ -19,6 +19,8 @@ import { addProduct } from '../service/service';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
 import Header from '../../components/Header';
+import * as FileSystem from 'expo-file-system';
+
  
 const categories = [
   { id: 'concert_ticket', name: 'Concert Tickets', icon: 'musical-notes' },
@@ -50,33 +52,45 @@ export default function SellScreen() {
   const { user } = useAuth();
  
  
-  const uploadImageToCloudinary = async (imageUri: string): Promise<string | null> => {
+  const uploadImageToCloudinary = async (imageUri: string, retries = 3): Promise<string | null> => {
     try {
-      // Convert to Blob for web compatibility
-      const blob = await (await fetch(imageUri)).blob();
- 
-      const data = new FormData();
-      data.append('file', blob);
-      data.append('upload_preset', 'ADAAAAAAA'); // Replace with your unsigned preset
- 
-      const res = await fetch('https://api.cloudinary.com/v1_1/dgficzevd/image/upload', {
+      const fileName = imageUri.split('/').pop();
+      const fileType = fileName?.split('.').pop();
+  
+      const formData = new FormData();
+      formData.append('file', {
+        uri: imageUri,
+        type: `image/${fileType}`,
+        name: fileName,
+      } as any);
+      formData.append('upload_preset', 'ADAAAAAAA');
+  
+      const response = await fetch('https://api.cloudinary.com/v1_1/dgficzevd/image/upload', {
         method: 'POST',
-        body: data,
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       });
- 
-      const result = await res.json();
- 
-      if (res.ok) {
-        return result.secure_url;
-      } else {
-        console.error('Upload failed:', result);
-        return null;
+  
+      const data = await response.json();
+  
+      if (!response.ok) {
+        throw new Error(`Upload failed: ${data.error?.message || 'Unknown error'}`);
       }
+  
+      return data.secure_url;
     } catch (error) {
-      console.error('Upload error:', error);
-      return null;
+      console.error('Upload attempt error:', error);
+      if (retries > 0) {
+        console.log(`Retrying upload... ${retries} attempts remaining`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return uploadImageToCloudinary(imageUri, retries - 1);
+      }
+      throw new Error('Image upload failed after multiple attempts.');
     }
   };
+  
  
  
  
@@ -87,40 +101,78 @@ export default function SellScreen() {
  
  
   const pickImage = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
- 
-    if (status !== 'granted') {
-      showToast('Permission to access media library is required!', 'error');
-      return;
-    }
- 
-    try {
-      const result = await ImagePicker.launchImageLibraryAsync({
-        mediaTypes: ImagePicker.MediaTypeOptions.Images,
-        allowsEditing: true,
-        aspect: [4, 3],
-        quality: 0.8,
-      });
- 
-      if (!result.canceled && result.assets && result.assets.length > 0) {
-        const localUri = result.assets[0].uri;
- 
-        showToast('Uploading image...', 'info');
- 
-        const cloudinaryUrl = await uploadImageToCloudinary(localUri);
- 
-        if (cloudinaryUrl) {
-          setImages(prev => [...prev, cloudinaryUrl]);
-          showToast('Image uploaded successfully!', 'success');
-        } else {
-          showToast('Image upload failed', 'error');
+    if (Platform.OS === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async () => {
+        const file = input.files?.[0];
+        if (file) {
+          showToast('Uploading image...', 'info');
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('upload_preset', 'ADAAAAAAA');
+  
+          try {
+            const res = await fetch('https://api.cloudinary.com/v1_1/dgficzevd/image/upload', {
+              method: 'POST',
+              body: formData,
+            });
+  
+            if (!res.ok) {
+              const errorData = await res.json();
+              throw new Error(`Upload failed: ${errorData.error?.message || 'Unknown error'}`);
+            }
+  
+            const result = await res.json();
+            setImages(prev => [...prev, result.secure_url]);
+            showToast('Image uploaded successfully!', 'success');
+          } catch (err) {
+            console.error('Upload error:', err);
+            if (err instanceof TypeError && err.message.includes('Network request failed')) {
+              showToast('Network error. Please check your internet connection.', 'error');
+            } else {
+              showToast(err.message || 'Error uploading image', 'error');
+            }
+          }
         }
+      };
+      input.click();
+    } else {
+      try {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== 'granted') {
+          showToast('Permission to access media library is required!', 'error');
+          return;
+        }
+  
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          allowsEditing: true,
+          aspect: [4, 3],
+          quality: 0.8,
+        });
+  
+        if (!result.canceled && result.assets.length > 0) {
+          const localUri = result.assets[0].uri;
+          showToast('Uploading image...', 'info');
+  
+          try {
+            const cloudinaryUrl = await uploadImageToCloudinary(localUri);
+            setImages(prev => [...prev, cloudinaryUrl]);
+            showToast('Image uploaded successfully!', 'success');
+          } catch (error) {
+            console.error('Cloudinary upload error:', error);
+            showToast(error.message || 'Error uploading image', 'error');
+          }
+        }
+      } catch (error) {
+        console.error('Image picker error:', error);
+        showToast('Error accessing image library', 'error');
       }
-    } catch (error) {
-      showToast('Error picking or uploading image', 'error');
-      console.error('Error:', error);
     }
   };
+  
  
  
   const pickDocument = async () => {
@@ -262,6 +314,8 @@ export default function SellScreen() {
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={{ flex: 1 }}
     >
+            <Header />
+
       <ScrollView
         style={styles.container}
         contentContainerStyle={styles.contentContainer}

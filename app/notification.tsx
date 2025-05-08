@@ -2,6 +2,8 @@ import React from 'react';
 import { View, Text, StyleSheet, FlatList, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import Header from '../components/Header';
+
 
 const notifications = [
   { id: '1', title: 'Steve and 8 others added comments on Design Assets - Smart Tags file', time: '2m' },
@@ -32,7 +34,11 @@ const NotificationScreen = () => {
   );
 
   return (
-    <View style={styles.container}>
+    <>
+                  <Header />
+
+        <View style={styles.container}>
+
       <TouchableOpacity style={styles.backButton} onPress={() => router.back()}>
         <Ionicons name="arrow-back" size={24} color="#333" />
       </TouchableOpacity>
@@ -44,6 +50,8 @@ const NotificationScreen = () => {
         contentContainerStyle={styles.listContainer}
       />
     </View>
+    </>
+
   );
 };
 

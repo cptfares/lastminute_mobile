@@ -49,7 +49,7 @@ export default function SearchScreen() {
   useEffect(() => {
     if (!Array.isArray(products)) return; // Ensure it's an array before filtering
 
-    let filtered = [...products];
+    let filtered = [...products].filter(product => product.status !== 'sold');
 
     if (category) {
       filtered = filtered.filter((product) => product.type === category);

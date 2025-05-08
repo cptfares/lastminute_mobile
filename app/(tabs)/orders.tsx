@@ -183,8 +183,7 @@ useEffect(() => {
   };
 
   const goBackToOrdersList = () => {
-    setViewingOrderDetails(false);
-    showToast('Returning to orders list', 'info');
+
 
   };
 
@@ -306,7 +305,8 @@ useEffect(() => {
   if (!viewingOrderDetails) {
     return (
       <>
-        <Header />
+            <Header />
+
         {renderOrdersList()}
       </>
     );
@@ -317,7 +317,6 @@ useEffect(() => {
       style={styles.container}
       contentContainerStyle={styles.contentContainer}
     >
-      <Header />
 
       <View style={styles.header}>
 
@@ -329,11 +328,6 @@ useEffect(() => {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Order Details</Text>
         <TouchableOpacity onPress={openSupport}>
-          <Ionicons
-            name="chatbubble-ellipses-outline"
-            size={24}
-            color="#6366f1"
-          />
         </TouchableOpacity>
       </View>
 

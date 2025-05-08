@@ -1,12 +1,21 @@
 import { Platform } from 'react-native';
 
 export function getLocalIp(): string {
-  // For Android emulator and physical devices
+  // For Android emulator
   if (Platform.OS === 'android') {
-    return '192.168.51.185'; // Standard Android emulator localhost address
+    if (__DEV__) {
+      return '10.0.2.2'; // Standard Android emulator localhost address
+    }
+    return '192.168.137.91'; // For physical Android device
   }
   // For iOS simulator and physical devices
-  return '192.168.51.185';
+  if (Platform.OS === 'ios') {
+    if (__DEV__) {
+      return 'localhost'; // Standard iOS simulator localhost address
+    }
+    return '192.168.137.91'; // For physical iOS device
+  }
+  return '192.168.137.91'; // Fallback IP
 }
 
 export default getLocalIp;

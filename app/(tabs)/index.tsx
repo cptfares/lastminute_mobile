@@ -100,12 +100,18 @@ export default function HomeScreen() {
         console.log('Fetched products:', products);
 
         if (products && products.length > 0) {
-          const shuffledProducts = [...products].sort(
+          const availableProducts = products.filter(product => product.status !== 'sold');
+          const shuffledProducts = [...availableProducts].sort(
             () => 0.5 - Math.random()
           );
 
+          // Only show available products
           setRecommendedProducts(shuffledProducts.slice(0, 4));
           setTrendingProducts(shuffledProducts.slice(4, 6));
+          
+          // Log filtered products for debugging
+          console.log('Available products:', availableProducts.length);
+          console.log('Filtered out sold products:', products.length - availableProducts.length);
 
           console.log('Recommended:', shuffledProducts.slice(0, 4));
           console.log('Trending:', shuffledProducts.slice(4, 6));
@@ -159,7 +165,6 @@ export default function HomeScreen() {
           <Text style={styles.heroSubtitle}>Buy and sell with confidence</Text>
           <View style={{  }}>
         {/* Other components like header, products, etc. */}
-        <FloatingChatButton />
     </View>
 
           <View style={styles.searchContainer}>
@@ -272,7 +277,10 @@ export default function HomeScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>For You</Text>
             <TouchableOpacity
-              onPress={() => showToast('View all recommended products', 'info')}
+              onPress={() =>       router.push({
+                pathname: '/search',
+
+              })}
             >
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>
@@ -315,7 +323,7 @@ export default function HomeScreen() {
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Trending Now</Text>
             <TouchableOpacity
-              onPress={() => showToast('View all trending items', 'info')}
+              onPress={() => showToast('This feature is coming soon', 'info')}
             >
               <Text style={styles.viewAllText}>View all</Text>
             </TouchableOpacity>

@@ -1,4 +1,3 @@
-import { useState, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,95 +5,33 @@ import {
   TouchableOpacity,
   ScrollView,
   StyleSheet,
-  ActivityIndicator,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import Header from '../../components/Header';
 import { useAuth } from '../context/AuthContext';
-import { getProductByUserID } from '../service/service';
-import { Product } from '../entities/product';
-import { useToast } from '../context/ToastContext';
+
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { user, signOut } = useAuth();
   const { showToast } = useToast();
-  const [userProducts, setUserProducts] = useState<Product[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (user?._id) {
-      fetchUserProducts();
-    }
-  }, [user]);
-
-  const fetchUserProducts = async () => {
-    if (!user?._id) return;
-
-    setIsLoading(true);
-    try {
-      const products = await getProductByUserID(user._id);
-      setUserProducts(products);
-      setError(null); // Clear any previous errors
-    } catch (err) {
-      console.error('Error fetching user products:', err);
-      setError('Failed to load your products. Please try again later.');
-      setUserProducts([]); // Reset products on error
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   if (!user) {
     router.replace('/login');
     return null;
   }
 
-  // Format price with currency
   const formatPrice = (price: number, currency: string) => {
     return `$${price.toFixed(2)}`;
   };
-
-  // Sample data as fallback if API fails
-  const sampleUserProducts = [
-    {
-      _id: '1',
-      title: 'UFC 300 VIP Experience',
-      price: 999.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1579882392185-ea7c6fd3a92a?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: user._id,
-      type: 'concert_ticket' as any,
-      description: 'VIP experience for UFC 300',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-    {
-      _id: '2',
-      title: 'PlayStation Plus 12-Month Subscription',
-      price: 59.99,
-      currency: 'USD',
-      images: [
-        'https://images.unsplash.com/photo-1592155931584-901ac15763e3?w=800&auto=format&fit=crop&q=60',
-      ],
-      sellerId: user._id,
-      type: 'gaming_account' as any,
-      description: '12-month PlayStation Plus subscription',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      status: 'available' as any,
-    },
-  ];
 
   return (
     <View style={styles.container}>
       <Header />
       <ScrollView style={styles.content}>
+        {/* Profile Info */}
         <View style={styles.header}>
           <Image
             source={{
@@ -136,94 +73,12 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>My Listings</Text>
-            <TouchableOpacity onPress={() => router.push('/(tabs)/sell')}>
-              <Text style={styles.sectionAction}>+ Add New</Text>
-            </TouchableOpacity>
-          </View>
 
-          {isLoading ? (
-            <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color="#6366f1" />
-              <Text style={styles.loadingText}>Loading your products...</Text>
-            </View>
-          ) : error ? (
-            <View style={styles.errorContainer}>
-              <Ionicons name="alert-circle-outline" size={24} color="#ef4444" />
-              <Text style={styles.errorText}>{error}</Text>
-            </View>
-          ) : userProducts.length === 0 ? (
-            <View style={styles.emptyContainer}>
-              <Ionicons name="cube-outline" size={48} color="#9ca3af" />
-              <Text style={styles.emptyText}>
-                You haven't listed any products yet
-              </Text>
-              <TouchableOpacity
-                style={styles.sellButton}
-                onPress={() => router.push('/(tabs)/sell')}
-              >
-                <Text style={styles.sellButtonText}>Sell Something</Text>
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={styles.productsGrid}>
-              {userProducts.map((product) => (
-                <TouchableOpacity
-                  key={product._id}
-                  style={styles.productCard}
-                  onPress={() => {
-                    router.push(`/product/${product._id}`);
-                    showToast(`Viewing ${product.title}`, 'info');
-                  }}
-                >
-                  <Image
-                    source={{
-                      uri:
-                        product.images[0] ||
-                        'https://images.unsplash.com/photo-1603190287605-e6ade32fa852?w=800&auto=format&fit=crop&q=60',
-                    }}
-                    style={styles.productImage}
-                  />
-                  <View style={styles.productInfo}>
-                    <Text style={styles.productTitle} numberOfLines={1}>
-                      {product.title}
-                    </Text>
-                    <Text style={styles.productPrice}>
-                      {formatPrice(product.price, product.currency)}
-                    </Text>
-                    <View style={styles.productStatus}>
-                      <View
-                        style={[
-                          styles.statusDot,
-                          product.status === 'available'
-                            ? styles.statusAvailable
-                            : product.status === 'sold'
-                            ? styles.statusSold
-                            : styles.statusCancelled,
-                        ]}
-                      />
-                      <Text style={styles.statusText}>
-                        {product.status === 'available'
-                          ? 'Available'
-                          : product.status === 'sold'
-                          ? 'Sold'
-                          : 'Cancelled'}
-                      </Text>
-                    </View>
-                  </View>
-                </TouchableOpacity>
-              ))}
-            </View>
-          )}
-        </View>
-
+        {/* Account Info */}
         <View style={styles.section}>
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Account Information</Text>
           </View>
-
           <View style={styles.infoCard}>
             <View style={styles.infoRow}>
               <Text style={styles.infoLabel}>Email</Text>
@@ -246,6 +101,7 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        {/* Sign Out */}
         <View style={styles.logoutSection}>
           <TouchableOpacity
             style={styles.logoutButton}
@@ -262,6 +118,7 @@ export default function ProfileScreen() {
     </View>
   );
 }
+
 
 const styles = StyleSheet.create({
   container: {
@@ -348,101 +205,7 @@ const styles = StyleSheet.create({
     color: '#6366f1',
     fontWeight: '500',
   },
-  loadingContainer: {
-    padding: 32,
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 8,
-    color: '#6b7280',
-  },
-  errorContainer: {
-    padding: 16,
-    backgroundColor: '#fef2f2',
-    borderRadius: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  errorText: {
-    marginLeft: 8,
-    color: '#ef4444',
-  },
-  emptyContainer: {
-    padding: 32,
-    alignItems: 'center',
-    backgroundColor: '#f9fafb',
-    borderRadius: 8,
-  },
-  emptyText: {
-    marginTop: 8,
-    marginBottom: 16,
-    color: '#6b7280',
-    textAlign: 'center',
-  },
-  sellButton: {
-    backgroundColor: '#6366f1',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  sellButtonText: {
-    color: '#fff',
-    fontWeight: '500',
-  },
-  productsGrid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-  productCard: {
-    width: '48%',
-    backgroundColor: '#f9fafb',
-    borderRadius: 12,
-    overflow: 'hidden',
-    marginBottom: 12,
-  },
-  productImage: {
-    width: '100%',
-    height: 120,
-    backgroundColor: '#e5e7eb',
-  },
-  productInfo: {
-    padding: 12,
-  },
-  productTitle: {
-    fontSize: 14,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  productPrice: {
-    fontSize: 16,
-    fontWeight: '600',
-    color: '#6366f1',
-    marginBottom: 4,
-  },
-  productStatus: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  statusDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    marginRight: 6,
-  },
-  statusAvailable: {
-    backgroundColor: '#10b981',
-  },
-  statusSold: {
-    backgroundColor: '#6366f1',
-  },
-  statusCancelled: {
-    backgroundColor: '#ef4444',
-  },
-  statusText: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
+
   infoCard: {
     backgroundColor: '#f9fafb',
     borderRadius: 12,

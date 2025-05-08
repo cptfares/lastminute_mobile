@@ -9,7 +9,7 @@ export default function OrderSuccessScreen() {
       <View style={styles.content}>
         <Image
           source={{
-            uri: 'https://images.unsplash.com/photo-1627163439134-7a8c47e08208?w=800&auto=format&fit=crop&q=60',
+            uri: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3b/Eo_circle_green_checkmark.svg/1200px-Eo_circle_green_checkmark.svg.png',
           }}
           style={styles.successImage}
         />
