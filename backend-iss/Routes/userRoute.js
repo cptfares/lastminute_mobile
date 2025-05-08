@@ -7,6 +7,7 @@ putUser,
 deleteUser,
 getOneUser,
 signIn,
+getWalletAddress,
 } = require("../Controllers/userController");
 const isAuth = require("../middleware/isauth")
 const isAutho=require('../middleware/isAutho')
@@ -16,4 +17,5 @@ userRoute.post("/users", postUser);
 userRoute.put("/users/:id", putUser);
 userRoute.delete("/users/:id",isAuth,isAutho(['admin']), deleteUser);
 userRoute.post("/signIn", signIn);
+userRoute.get("/users/:userId/wallet", getWalletAddress);
 module.exports = userRoute;

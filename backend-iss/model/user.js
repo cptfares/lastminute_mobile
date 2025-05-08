@@ -27,6 +27,15 @@ status: {
     type: String,
     enum: ['active', 'banned'], 
     default: 'active', 
+  },
+walletAddress: {
+    type: String,
+    unique: true,
+    sparse: true
+  },
+privateKey: {
+    type: String,
+    select: false // This ensures the private key isn't returned in queries by default
   }
 },
 );

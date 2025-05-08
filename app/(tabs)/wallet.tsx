@@ -13,96 +13,76 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import Header from '../../components/Header';
 import { useAuth } from '../context/AuthContext';
-import { useToast } from '../context/ToastContext';
-import { getWalletInfo, addFunds, getTransactionHistory } from '../service/service';
-import { WalletTransaction } from '../entities/wallet';
+import { blockchainService } from '../service/blockchainService';
+import { ethers } from 'ethers';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export default function WalletScreen() {
-  const { user, token } = useAuth();
-  const { showToast } = useToast();
-  const [selectedPeriod, setSelectedPeriod] = useState<'1D' | '1W' | '1M' | '1Y'>('1W');
+  const { user } = useAuth();
+  const [balance, setBalance] = useState('0');
   const [isLoading, setIsLoading] = useState(false);
   const [showLoadModal, setShowLoadModal] = useState(false);
   const [loadAmount, setLoadAmount] = useState('');
-  const [balance, setBalance] = useState(0);
-  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const fetchWalletData = async () => {
-    try {
-      setIsLoading(true);
-      const walletInfo = await getWalletInfo(token);
-      setBalance(walletInfo.balance);
-      const history = await getTransactionHistory(10, token);
-      setTransactions(history);
-    } catch (error: any) {
-      showToast('error', error.message || 'Error fetching wallet data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
 
   useEffect(() => {
-    fetchWalletData();
-  }, []);
+    if (user?.walletAddress && user?.privateKey) {
+      connectWalletWithCredentials();
+    }
+  }, [user?.walletAddress, user?.privateKey]);
+
+  const connectWalletWithCredentials = async () => {
+    try {
+      if (!user?.privateKey) return;
+      
+      await blockchainService.connectWallet(user.privateKey);
+      await fetchBalance();
+    } catch (error) {
+      console.error('Error connecting wallet:', error);
+      Alert.alert('Error', 'Failed to connect wallet automatically. Please try again.');
+    }
+  };
+
+  const fetchBalance = async () => {
+    try {
+      if (!user?.walletAddress) return;
+      const lstBalance = await blockchainService.getBalance(user.walletAddress);
+      setBalance(lstBalance);
+    } catch (error) {
+      console.error('Error fetching balance:', error);
+    }
+  };
 
   const handleLoadLST = async () => {
-    if (!loadAmount || parseFloat(loadAmount) <= 0) {
-      showToast('error', 'Please enter a valid amount');
-      return;
-    }
-
     try {
       setIsLoading(true);
-      await addFunds(parseFloat(loadAmount), 'Deposit', token);
-      await fetchWalletData();
-      setShowLoadModal(false);
-      setLoadAmount('');
-      showToast('success', 'Funds added successfully');
-    } catch (error: any) {
-      showToast('error', error.message || 'Error adding funds');
+      
+      if (!loadAmount || isNaN(parseFloat(loadAmount))) {
+        Alert.alert('Error', 'Please enter a valid amount');
+        return;
+      }
+
+      if (!user?.privateKey || !user?.walletAddress) {
+        Alert.alert('Error', 'Wallet not connected. Please log in again.');
+        return;
+      }
+
+      const wallet = await blockchainService.connectWallet(user.privateKey);
+      const success = await blockchainService.purchaseLST(wallet, parseFloat(loadAmount));
+
+      if (success) {
+        Alert.alert('Success', `Successfully loaded ${loadAmount} LST`);
+        setShowLoadModal(false);
+        setLoadAmount('');
+        await fetchBalance(); // Refresh the balance
+      } else {
+        Alert.alert('Error', 'Failed to load LST. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error loading LST:', error);
+      Alert.alert('Error', 'Failed to load LST: ' + (error instanceof Error ? error.message : 'Unknown error'));
     } finally {
       setIsLoading(false);
     }
-  };
-
-  if (isLoading && !transactions.length) {
-    return (
-      <View style={styles.container}>
-        <ActivityIndicator size="large" color="#0000ff" />
-      </View>
-    );
-  }
-
-  const formatDate = (date: Date) => {
-    const now = new Date();
-    const transactionDate = new Date(date);
-    const diffTime = Math.abs(now.getTime() - transactionDate.getTime());
-    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-    if (diffDays === 0) {
-      const diffHours = Math.floor(diffTime / (1000 * 60 * 60));
-      if (diffHours === 0) {
-        const diffMinutes = Math.floor(diffTime / (1000 * 60));
-        return `${diffMinutes} minutes ago`;
-      }
-      return `${diffHours} hours ago`;
-    } else if (diffDays === 1) {
-      return 'Yesterday';
-    } else {
-      return `${diffDays} days ago`;
-    }
-  };
-
-  const loadMore = () => {
-    setIsLoading(true);
-    setTimeout(() => {
-      setIsLoading(false);
-    }, 1000);
-  };
-
-  const getTransactionIcon = (type: WalletTransaction['type']) => {
-    return type === 'sale' ? 'arrow-up-circle' : 'arrow-down-circle';
   };
 
   return (
@@ -111,104 +91,39 @@ export default function WalletScreen() {
       <ScrollView style={styles.content}>
         <View style={styles.balanceCard}>
           <Text style={styles.balanceLabel}>LST Balance</Text>
-          <Text style={styles.balanceAmount}>{balance} LST</Text>
-          <Text style={styles.fiatEquivalent}>≈ ${balance.toFixed(2)} USD</Text>
-
-          <View style={styles.actionButtons}>
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={() => setShowLoadModal(true)}
-            >
-              <Ionicons name="add-circle" size={24} color="#fff" />
-              <Text style={styles.actionButtonText}>Load LST</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.actionButton}>
-              <Ionicons name="send" size={24} color="#fff" />
-              <Text style={styles.actionButtonText}>Send</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-
-        <View style={styles.chartSection}>
-          <View style={styles.chartHeader}>
-            <Text style={styles.chartTitle}>LST Activity</Text>
-            <View style={styles.periodSelector}>
-              {(['1D', '1W', '1M', '1Y'] as const).map((period) => (
+          {user?.walletAddress ? (
+            <>
+              <Text style={styles.balanceAmount}>{balance} LST</Text>
+              <Text style={styles.walletAddress}>
+                Wallet: {user.walletAddress.slice(0, 6)}...{user.walletAddress.slice(-4)}
+              </Text>
+              <View style={styles.actionButtons}>
                 <TouchableOpacity
-                  key={period}
-                  style={[
-                    styles.periodButton,
-                    selectedPeriod === period && styles.periodButtonActive,
-                  ]}
-                  onPress={() => setSelectedPeriod(period)}
+                  style={styles.actionButton}
+                  onPress={() => setShowLoadModal(true)}
+                  disabled={isLoading}
                 >
-                  <Text
-                    style={[
-                      styles.periodButtonText,
-                      selectedPeriod === period &&
-                        styles.periodButtonTextActive,
-                    ]}
-                  >
-                    {period}
+                  <Ionicons name="add-circle" size={24} color="#fff" />
+                  <Text style={styles.actionButtonText}>
+                    {isLoading ? 'Processing...' : 'Buy LST'}
                   </Text>
                 </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-          <View style={styles.chart}>
-            <View style={styles.chartPlaceholder}>
-              <Text style={styles.chartPlaceholderText}>
-                LST Price Chart Coming Soon
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.transactionsSection}>
-          <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          {transactions.map((transaction, index) => (
-            <View key={index} style={styles.transactionItem}>
-              <View
-                style={[
-                  styles.transactionIcon,
-                  transaction.type === 'credit'
-                    ? styles.saleIcon
-                    : styles.purchaseIcon,
-                ]}
-              >
-                <Ionicons
-                  name={transaction.type === 'credit' ? 'arrow-up-circle' : 'arrow-down-circle'}
-                  size={24}
-                  color="#fff"
-                />
+                <TouchableOpacity style={styles.actionButton}>
+                  <Ionicons name="send" size={24} color="#fff" />
+                  <Text style={styles.actionButtonText}>Send</Text>
+                </TouchableOpacity>
               </View>
-              <View style={styles.transactionInfo}>
-                <Text style={styles.transactionTitle}>
-                  {transaction.description}
-                </Text>
-                <Text style={styles.transactionType}>
-                  {transaction.type === 'credit' ? 'Deposit' : 'Withdrawal'}
-                </Text>
-                <Text style={styles.transactionDate}>{formatDate(transaction.createdAt)}</Text>
-              </View>
-              <View style={styles.transactionAmount}>
-                <Text style={styles.lstAmount}>{transaction.amount} LST</Text>
-                <Text style={styles.fiatAmount}>${transaction.amount.toFixed(2)}</Text>
-              </View>
+            </>
+          ) : (
+            <View style={styles.connectingContainer}>
+              <ActivityIndicator size="large" color="#6366f1" />
+              <Text style={styles.connectingText}>Connecting wallet...</Text>
             </View>
-          ))}
-          <TouchableOpacity
-            style={styles.loadMoreButton}
-            onPress={loadMore}
-            disabled={isLoading}
-          >
-            <Text style={styles.loadMoreText}>
-              {isLoading ? 'Loading...' : 'Load More'}
-            </Text>
-          </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
 
+      {/* Buy LST Modal */}
       <Modal
         visible={showLoadModal}
         animationType="slide"
@@ -218,7 +133,7 @@ export default function WalletScreen() {
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
-              <Text style={styles.modalTitle}>Load LST</Text>
+              <Text style={styles.modalTitle}>Buy LST Tokens</Text>
               <TouchableOpacity
                 onPress={() => setShowLoadModal(false)}
                 style={styles.modalCloseButton}
@@ -232,18 +147,18 @@ export default function WalletScreen() {
               style={styles.modalInput}
               value={loadAmount}
               onChangeText={setLoadAmount}
-              placeholder="Enter LST amount"
               keyboardType="numeric"
+              placeholder="Enter amount"
             />
-            <Text style={styles.modalEquivalent}>
-              ≈ ${parseFloat(loadAmount || '0').toFixed(2)} USD
-            </Text>
 
             <TouchableOpacity
-              style={styles.modalButton}
+              style={[styles.modalButton, isLoading && styles.modalButtonDisabled]}
               onPress={handleLoadLST}
+              disabled={isLoading}
             >
-              <Text style={styles.modalButtonText}>Load LST</Text>
+              <Text style={styles.modalButtonText}>
+                {isLoading ? 'Processing...' : 'Buy Tokens'}
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -293,125 +208,33 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
   },
-  chartSection: {
-    padding: 16,
-  },
-  chartHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+  connectingContainer: {
     alignItems: 'center',
-    marginBottom: 16,
-  },
-  chartTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-  },
-  periodSelector: {
-    flexDirection: 'row',
-    backgroundColor: '#f3f4f6',
-    borderRadius: 20,
-    padding: 4,
-  },
-  periodButton: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  periodButtonActive: {
-    backgroundColor: '#6366f1',
-  },
-  periodButtonText: {
-    color: '#6b7280',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  periodButtonTextActive: {
-    color: '#fff',
-  },
-  chart: {
     marginTop: 16,
   },
-  chartPlaceholder: {
-    height: 200,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  chartPlaceholderText: {
-    color: '#6b7280',
+  connectingText: {
+    color: '#6366f1',
     fontSize: 16,
-  },
-  transactionsSection: {
-    padding: 16,
-  },
-  sectionTitle: {
-    fontSize: 18,
     fontWeight: '600',
-    marginBottom: 16,
-  },
-  transactionItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    marginBottom: 12,
-  },
-  transactionIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  saleIcon: {
-    backgroundColor: '#10b981',
-  },
-  purchaseIcon: {
-    backgroundColor: '#6366f1',
-  },
-  transactionInfo: {
-    flex: 1,
-    marginLeft: 12,
-  },
-  transactionTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  transactionType: {
-    fontSize: 14,
-    color: '#6b7280',
-    marginBottom: 2,
-  },
-  transactionDate: {
-    fontSize: 12,
-    color: '#6b7280',
-  },
-  transactionAmount: {
-    alignItems: 'flex-end',
-  },
-  lstAmount: {
-    fontSize: 16,
-    fontWeight: '500',
-    marginBottom: 4,
-  },
-  fiatAmount: {
-    fontSize: 14,
-    color: '#6b7280',
-  },
-  loadMoreButton: {
-    padding: 16,
-    backgroundColor: '#f3f4f6',
-    borderRadius: 12,
-    alignItems: 'center',
     marginTop: 8,
   },
-  loadMoreText: {
-    color: '#6366f1',
+  connectButton: {
+    backgroundColor: '#6366f1',
+    padding: 16,
+    borderRadius: 12,
+    marginTop: 16,
+  },
+  connectButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+  },
+  walletAddress: {
+    color: '#fff',
+    opacity: 0.8,
     fontSize: 14,
-    fontWeight: '500',
+    marginTop: 8,
   },
   modalOverlay: {
     flex: 1,
@@ -461,6 +284,9 @@ const styles = StyleSheet.create({
     padding: 16,
     borderRadius: 12,
     alignItems: 'center',
+  },
+  modalButtonDisabled: {
+    backgroundColor: '#a5b4fc',
   },
   modalButtonText: {
     color: '#fff',

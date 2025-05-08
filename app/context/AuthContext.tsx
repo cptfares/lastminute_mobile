@@ -2,6 +2,7 @@ import { createContext, useContext, useState, useEffect } from 'react';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { User } from '../entities/user';
 import { loginUser, registerUser } from '../service/service';
+import { blockchainService } from '../service/blockchainService';
 
 interface AuthContextType {
   user: User | null;
@@ -96,36 +97,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }) => {
     try {
       setIsLoading(true);
-      // Try to register with API
-      try {
-        const newUser = await registerUser(userData);
-        // After successful registration, automatically sign in
-        await signIn(userData.email, userData.password);
-        return newUser;
-      } catch (error) {
-        console.error('API registration failed, using mock data:', error);
-
-        // Mock registration for demo purposes
-        const mockUser = {
-          _id: 'mock-user-id-' + Date.now(),
-          userName: userData.userName,
-          email: userData.email,
-          age: userData.age,
-          password: '',
-          role: 'user' as const,
-          status: 'active' as const,
-          createdAt: new Date().toISOString(),
-        };
-
-        const mockToken = 'mock-token-' + Date.now();
-
-        await AsyncStorage.setItem('userToken', mockToken);
-        await AsyncStorage.setItem('userData', JSON.stringify(mockUser));
-
-        setToken(mockToken);
-        setUser(mockUser);
-        return mockUser;
+      const response = await registerUser(userData);
+      console.log('Registration response:', response); // Debug log
+      
+      if (!response.user || !response.token) {
+        throw new Error('Invalid registration response');
       }
+
+      // Store the token and user data
+      await AsyncStorage.setItem('userToken', response.token);
+      await AsyncStorage.setItem('userData', JSON.stringify(response.user));
+
+      setToken(response.token);
+      setUser(response.user);
+      
+      return response.user;
     } catch (error) {
       console.error('Error during sign up:', error);
       throw error;

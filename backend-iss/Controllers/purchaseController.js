@@ -2,23 +2,29 @@ const Purchase = require('../model/purchaces');  // Correct the file name if nec
 
 exports.createPurchase = async (req, res) => {
   const transaction = req.body;
-  console.log('Received data:', req.body); 
+  console.log('Received purchase data:', req.body);
 
   try {
     // Create a new purchase using the Purchase model
-    const purchase = new Purchase(transaction);
+    const purchase = new Purchase({
+      ...transaction,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    });
 
     // Save the purchase in the database
     await purchase.save();
 
     // Send a success response
     res.status(201).json({
+      success: true,
       message: 'Purchase created successfully',
       purchase,
     });
   } catch (error) {
-    console.error(error);  // Log the error for debugging purposes
+    console.error('Error creating purchase:', error);
     res.status(500).json({
+      success: false,
       message: 'Error creating purchase',
       error: error.message || 'Internal Server Error',
     });

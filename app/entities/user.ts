@@ -7,7 +7,9 @@ export interface User {
     password: string; // Should be stored securely (hashed)
     role: "user" | "admin";
     status: "active" | "banned";
-  }
-  export type RegisterUser = Omit<User, "_id" | "createdAt" | "role" | "status">;
+    walletAddress?: string;
+    privateKey?: string;
+}
+export type RegisterUser = Omit<User, "_id" | "createdAt" | "role" | "status">;
 
 export default User;

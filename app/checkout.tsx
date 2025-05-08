@@ -5,70 +5,91 @@ import {
   TouchableOpacity,
   StyleSheet,
   ScrollView,
+  Alert,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useLocalSearchParams } from 'expo-router';
-import { createPurchase, updateProduct, deductFunds } from './service/service';
 import { useAuth } from './context/AuthContext';
 import { useToast } from './context/ToastContext';
+import { blockchainService } from './service/blockchainService';
+import { updateProduct } from './service/service';
+import { ethers } from 'ethers';
 
-type PaymentMethod = 'card' | 'crypto' | null;
+type PaymentMethod = 'crypto' | null;
 
 export default function CheckoutScreen() {
   const router = useRouter();
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(null);
-  const { user, token } = useAuth();
-  const [error, setError] = useState<string | null>(null);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const { user } = useAuth();
   const { showToast } = useToast();
   const params = useLocalSearchParams();
 
   const item = {
-    id: params.id,
+    id: typeof params.id === 'string' ? params.id : Array.isArray(params.id) ? params.id[0] : '',
     name: params.title || 'Product',
-    price: parseFloat(params.price) || 0,
-    sellerId: params.sellerId,
+    price: typeof params.price === 'string' ? parseFloat(params.price) : 0,
+    sellerId: typeof params.sellerId === 'string' ? params.sellerId : Array.isArray(params.sellerId) ? params.sellerId[0] : '',
   };
 
   const handlePlaceOrder = async () => {
     if (!paymentMethod) {
-      showToast('Warning: Pick a payment method.', 'warning');
+      showToast('Please select a payment method', 'warning');
+      return;
+    }
+
+    if (!user?.walletAddress || !user?.privateKey) {
+      showToast('Please connect your wallet first', 'error');
+      router.push('/(tabs)/wallet');
       return;
     }
 
     try {
-      // Create transaction
-      const transaction = await createPurchase({
-        buyerId: user._id,
-        sellerId: item.sellerId,
-        productId: item.id,
-        amount: item.price,
-        currency: 'LST',
-        status: 'completed',
-        paymentMethod: paymentMethod === 'card' ? 'credit_card' : 'crypto',
-        deliveryStatus: 'pending',
-      });
+      setIsProcessing(true);
 
-      // Deduct funds from wallet
-      await deductFunds(item.price, `Purchase: ${item.name}`, transaction._id, token);
+      // Get seller's wallet address from their user ID
+      const sellerWallet = await blockchainService.getWalletAddress(item.sellerId);
+      if (!sellerWallet) {
+        throw new Error('Seller wallet not found');
+      }
 
-      // Update product status to "sold"
+      // Connect user's wallet
+      const wallet = await blockchainService.connectWallet(user.privateKey);
+      
+      // Check if user has sufficient balance
+      const balance = await blockchainService.getBalance(user.walletAddress);
+      if (parseFloat(balance) < item.price) {
+        showToast('Insufficient LST balance', 'error');
+        return;
+      }
+
+      // Transfer LST tokens
+      const tx = await blockchainService.transfer(
+        wallet,
+        sellerWallet,
+        item.price.toString()
+      );
+
+      // Wait for transaction confirmation
+      await tx.wait();
+
+      // Update product status to sold
       await updateProduct(item.id, { status: 'sold' });
 
-      // Navigate to success page
+      showToast('Payment successful!', 'success');
       router.push('/order-success');
-    } catch (error: any) {
-      console.error('Order placement failed:', error);
-      showToast(error.message || 'Failed to place order. Please try again.', 'error');
+    } catch (error) {
+      console.error('Payment failed:', error);
+      showToast(error instanceof Error ? error.message : 'Payment failed. Please try again.', 'error');
+    } finally {
+      setIsProcessing(false);
     }
   };
 
   return (
     <View style={styles.container}>
       <View style={styles.header}>
-        <TouchableOpacity
-          onPress={() => router.back()}
-          style={styles.backButton}
-        >
+        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
           <Ionicons name="chevron-back" size={24} color="#000" />
         </TouchableOpacity>
         <Text style={styles.headerTitle}>Checkout</Text>
@@ -82,36 +103,6 @@ export default function CheckoutScreen() {
           <TouchableOpacity
             style={[
               styles.paymentOption,
-              paymentMethod === 'card' && styles.paymentOptionSelected,
-            ]}
-            onPress={() => setPaymentMethod('card')}
-          >
-            <View style={styles.paymentOptionIcon}>
-              <Ionicons name="card" size={24} color="#6366f1" />
-            </View>
-            <View style={styles.paymentOptionContent}>
-              <Text style={styles.paymentOptionTitle}>Credit Card</Text>
-              <Text style={styles.paymentOptionDescription}>
-                Pay with Visa, Mastercard, etc.
-              </Text>
-            </View>
-            <View
-              style={[
-                styles.paymentOptionCheck,
-                paymentMethod === 'card' && styles.paymentOptionCheckSelected,
-              ]}
-            >
-              <Ionicons
-                name="checkmark"
-                size={16}
-                color={paymentMethod === 'card' ? '#fff' : 'transparent'}
-              />
-            </View>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.paymentOption,
               paymentMethod === 'crypto' && styles.paymentOptionSelected,
             ]}
             onPress={() => setPaymentMethod('crypto')}
@@ -120,8 +111,8 @@ export default function CheckoutScreen() {
               <Ionicons name="logo-bitcoin" size={24} color="#6366f1" />
             </View>
             <View style={styles.paymentOptionContent}>
-              <Text style={styles.paymentOptionTitle}>Cryptocurrency</Text>
-              <Text style={styles.paymentOptionDescription}>Pay with LST</Text>
+              <Text style={styles.paymentOptionTitle}>LST Token</Text>
+              <Text style={styles.paymentOptionDescription}>Pay with LastMinute Token</Text>
             </View>
             <View
               style={[
@@ -141,15 +132,7 @@ export default function CheckoutScreen() {
         <View style={styles.summary}>
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Subtotal</Text>
-            <Text style={styles.summaryValue}>LST {item.price} </Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Shipping Cost</Text>
-            <Text style={styles.summaryValue}>LST 0.00</Text>
-          </View>
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Tax</Text>
-            <Text style={styles.summaryValue}>LST0.00</Text>
+            <Text style={styles.summaryValue}>LST {item.price}</Text>
           </View>
           <View style={[styles.summaryRow, styles.totalRow]}>
             <Text style={styles.totalLabel}>Total</Text>
@@ -162,13 +145,14 @@ export default function CheckoutScreen() {
         <TouchableOpacity
           style={[
             styles.placeOrderButton,
-            !paymentMethod && styles.placeOrderButtonDisabled,
+            (!paymentMethod || isProcessing) && styles.placeOrderButtonDisabled,
           ]}
           onPress={handlePlaceOrder}
-          disabled={!paymentMethod}
+          disabled={!paymentMethod || isProcessing}
         >
-          <Text style={styles.placeOrderButtonText}>LST {item.price}</Text>
-          <Text style={styles.placeOrderButtonText}>Place Order</Text>
+          <Text style={styles.placeOrderButtonText}>
+            {isProcessing ? 'Processing...' : `Pay LST ${item.price}`}
+          </Text>
         </TouchableOpacity>
       </View>
     </View>
@@ -308,7 +292,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#6366f1',
     borderRadius: 28,
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },

@@ -1,7 +1,7 @@
-
-
 const User = require("../model/user");
-
+const jwt = require("jsonwebtoken");
+require('dotenv').config();
+const { ethers } = require('ethers');
 
 const getUsers = async (request, response) => {
 try {
@@ -38,19 +38,35 @@ const getOneUser = async (req, res) => {
   const postUser = async (request, response) => {
   const user = request.body;
   try {
-  const foundUser = await User.findOne({ email: user.email });
-  if (foundUser) {
-  response.status(400).json({ msg: "user already exist" });
-  } else {
-  const newUser = new User(user)
-  console.log(newUser)
-  await newUser.save();
-  response.status(200).json({ user: newUser, msg: " user successfully added"
-  });
-  }}
-  catch (error) {
-  console.error(error);
-  response.status(500).json({ msg: "error on adding user" });
+    const foundUser = await User.findOne({ email: user.email });
+    if (foundUser) {
+      response.status(400).json({ msg: "user already exist" });
+    } else {
+      // Generate a new wallet for the user
+      const wallet = ethers.Wallet.createRandom();
+      const newUser = new User({
+        ...user,
+        walletAddress: wallet.address,
+        privateKey: wallet.privateKey
+      });
+      console.log('Created new user with wallet:', { address: wallet.address });
+      await newUser.save();
+      
+      // Generate JWT token
+      const token = jwt.sign(
+        { id: newUser._id, role: newUser.role },
+        process.env.JWT_SECRET
+      );
+      
+      response.status(200).json({ 
+        user: newUser, 
+        token: token,
+        msg: "user successfully added"
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    response.status(500).json({ msg: "error on adding user" });
   }
   };
 
@@ -82,34 +98,73 @@ const getOneUser = async (req, res) => {
     }
     };
 
-
-
-
-
-
-
-const jwt = require("jsonwebtoken");
-require('dotenv').config();
 const signIn = async (req, res) => {
-const user = req.body;
-try {
-const foundUser = await User.findOne({ email: user.email });
-if (foundUser) {
-if (user.password === foundUser.password) {
-const token = jwt.sign(
-{ id: foundUser._id, role: foundUser.role },
-process.env.JWT_SECRET
-);
-res.status(200).json({ user: foundUser, token: token });
-} else {
-res.status(400).json({ msg: "Wrong password" });
-}
-} else {
-return res.status(400).json({ msg: "User not registered" });
-}
-} catch (error) {
-console.error(error);
-res.status(500).json({ msg: "Server error" });
-}
+  const user = req.body;
+  try {
+    // Include privateKey in the query using select
+    const foundUser = await User.findOne({ email: user.email }).select('+privateKey');
+    if (foundUser) {
+      if (user.password === foundUser.password) {
+        const token = jwt.sign(
+          { id: foundUser._id, role: foundUser.role },
+          process.env.JWT_SECRET
+        );
+        
+        // If user doesn't have a wallet, create one
+        if (!foundUser.walletAddress) {
+          const wallet = ethers.Wallet.createRandom();
+          foundUser.walletAddress = wallet.address;
+          foundUser.privateKey = wallet.privateKey;
+          await foundUser.save();
+        }
+
+        res.status(200).json({ 
+          user: foundUser, 
+          token: token 
+        });
+      } else {
+        res.status(400).json({ msg: "Wrong password" });
+      }
+    } else {
+      return res.status(400).json({ msg: "User not registered" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ msg: "Server error" });
+  }
 };
-    module.exports = { getUsers, postUser, putUser, deleteUser, getOneUser,signIn };
+
+const getWalletAddress = async (req, res) => {
+  try {
+    const { userId } = req.params;
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'User not found'
+      });
+    }
+
+    // If user doesn't have a wallet, create one
+    if (!user.walletAddress) {
+      const wallet = ethers.Wallet.createRandom();
+      user.walletAddress = wallet.address;
+      user.privateKey = wallet.privateKey;
+      await user.save();
+    }
+
+    res.status(200).json({
+      success: true,
+      walletAddress: user.walletAddress
+    });
+  } catch (error) {
+    console.error('Error getting wallet address:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error getting wallet address'
+    });
+  }
+};
+
+module.exports = { getUsers, postUser, putUser, deleteUser, getOneUser, signIn, getWalletAddress };

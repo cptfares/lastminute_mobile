@@ -10,7 +10,7 @@ import { getLocalIp } from "../utils/network";
 // Initialize API with the correct IP
 const ip = getLocalIp();
 let api = axios.create({
-  baseURL: `http://192.168.137.91:6005/api`,
+  baseURL: `http://192.168.48.229:6005/api`,
   headers: {
     "Content-Type": "application/json",
   },
@@ -46,12 +46,25 @@ export const loginUser = async (email: string, password: string): Promise<LoginR
 
 
 
-export const registerUser = async (userData: RegisterUser): Promise<User> => {
+export const registerUser = async (userData: RegisterUser): Promise<{ user: User; token: string }> => {
   try {
-    const response = await api.post<{ data: User }>('/users', userData);
-    return response.data.data;
+    const response = await api.post('/users', userData);
+    
+    // Log the response for debugging
+    console.log("Registration Response:", response.data);
+    
+    // Handle both possible response structures
+    const user = response.data.user || response.data.data?.user;
+    const token = response.data.token || response.data.data?.token;
+    
+    if (!user || !token) {
+      console.error("Invalid response format:", response.data);
+      throw new Error('Invalid response format from server');
+    }
+    
+    return { user, token };
   } catch (error: any) {
-    console.error("Registration Error:", error);
+    console.error("Registration Error:", error.response?.data || error);
     throw new Error(error.response?.data?.msg || 'Error during registration');
   }
 };
