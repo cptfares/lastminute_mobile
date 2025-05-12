@@ -10,7 +10,7 @@ import { getLocalIp } from "../utils/network";
 // Initialize API with the correct IP
 const ip = getLocalIp();
 let api = axios.create({
-  baseURL: `http://192.168.137.91:6005/api`,
+  baseURL: `https://back-end-6b5z.onrender.com/api`,
   headers: {
     "Content-Type": "application/json",
   },

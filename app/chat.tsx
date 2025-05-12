@@ -39,7 +39,7 @@ export default function ChatScreen() {
   const scrollViewRef = useRef<ScrollView>(null);
 
   const ip = getLocalIp();
-  const API_URL = `http://${ip}:8000/recommend`;
+  const API_URL = `https://certain-sincerely-stud.ngrok-free.app/recommend`;
 
   useEffect(() => {
     console.log('Product state updated:', product);
@@ -70,7 +70,12 @@ export default function ChatScreen() {
 
     try {
       // Call your AI API
-      const response = await fetch(`${API_URL}?query=${encodeURIComponent(message)}`);
+      const response = await fetch(`${API_URL}?query=${encodeURIComponent(message)}`, {
+  headers: {
+    "Accept": "application/json",  // Explicitly requesting JSON response
+    "ngrok-skip-browser-warning": "true"  // Skip Ngrok warning page
+  },
+});
       const data = await response.json();
       console.log('API Response:', data);
 

@@ -20,7 +20,7 @@ export default function ProductShareScreen() {
   const [showCopied, setShowCopied] = useState(false);
   const { showToast } = useToast();
 
-  const productLink = `https://lastmin.app/product/${id}`;
+  const productLink = `https://lastmin.netlify.app/product/${id}`;
 
   const handleShare = async () => {
     try {
